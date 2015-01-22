@@ -1,0 +1,9 @@
+#!/usr/bin/env python /Applications/ll.app/Contents/MacOS/launcher.py --launch
+
+# action: script
+# target: sh
+# console: true
+
+xx
+
+
