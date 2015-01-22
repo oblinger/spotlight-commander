@@ -72,7 +72,8 @@ def type_script(keys, prefix = ''):
     if not template: error("Unknown script interpreter.")
     os.system(prefix + (template % keys[PATH]))
 def type_sh(keys):
-    os.system(keys[TARGET])
+    if 0!=os.system(keys[TARGET]):
+        error('Shell Command Failed.')
 def type_url(keys):
     os.system('open "%s"' % keys[TARGET])
 
@@ -88,9 +89,8 @@ def appkeys(file):
     return keys
 
 def error(err_str):
-    os.sys.stdout.write("ERROR: %s.  (hit return to exit)" % err_str)
-    raw_input()
-    os.exit(1)
+    raw_input("\nERROR: %s.  (hit return to exit)" % err_str)
+    os.sys.exit(1)
 
 
 
