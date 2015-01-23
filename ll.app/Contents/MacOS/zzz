@@ -1,3 +1,0 @@
-echo hello
-
-    read -p "Do you wish to install this program?" yn
