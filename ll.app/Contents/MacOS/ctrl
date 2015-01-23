@@ -125,7 +125,7 @@ def main():
     except KeyError:
         print "ERROR:  Unknown command '%s'" % a1
         return
-    fn(*argv[2:])
+    fn()
 
 
 
@@ -134,7 +134,7 @@ def main():
 ###  COMMANDS
 
 
-def cmd_b(*args):
+def cmd_b():
     """Import doc link from BROWSER."""
     name = arg(1, 'Enter name for URL link> ')
     if not name: error('No name specified.')
@@ -142,7 +142,7 @@ def cmd_b(*args):
     cap_set({NAME:name, ACTION:'url', TARGET:url})
 
     
-def cmd_c(*args):
+def cmd_c():
     """Creates a new cmd app"""
     name   = arg(1, prompt='Name of cap to create> ', error_string='Name required.')
     action = arg(2, prompt='Cap action (%s)> ' % ', '.join(ACTIONS), error_string='Action required.')
@@ -151,7 +151,7 @@ def cmd_c(*args):
     cap_set(keys)
 
 
-def cmd_e(*args):
+def cmd_e():
     """Edits the specified command."""
     prefix = arg(1, prompt='Enter name to edit> ')
     path = cap_find(CMD_DIR, prefix, exactly_one=True)
@@ -171,7 +171,7 @@ def cmd_f():
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-def cmd_x(*args):
+def cmd_x():
     name = arg(1, prompt='Enter name of command to execute')
     path = cap_find(CMD_DIR, name, exactly_one=True)
     os.system('open "%s"' % path)
@@ -188,9 +188,14 @@ def cmd_rebuild():
     if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s> ' % folder):
         return
     for cap in cap_get_all(folder):
-        if cap[NAME]=='test56':
-            print "Rebuilding %r" % cap[NAME]
-            cap_set(cap)
+        print "Rebuilding %r" % cap[NAME]
+        cap_set(cap)
+
+def cmd_rm():
+    name =  arg(1, prompt='Enter name of command to remove')
+    cap  = cap_get(cap_file_one(name))
+    print '### Deleting CAP "%s"' % cap[NAME]
+    cap_delete(cap)
 
 def cmd_scan(folder=CMD_DIR+'/old'):
     for name in os.listdir(folder):
@@ -242,7 +247,7 @@ TARGET  = 'target'   # REQ
 BODY    = 'body'     # opt  List of text lines after the last key value pair
 IO      = 'io'       # opt  non-null means that command should execute within a console window
 
-ACTIONS = ['app', 'doc', 'folder', 'script', 'sh', 'url']
+ACTIONS = ['app', 'doc', 'folder', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 
 
 def cap_get(path):
@@ -294,6 +299,8 @@ def cap_get(path):
         return None
     return None
 
+def cap_file_one(prefix):
+    return cap_find(CMD_DIR, prefix, exactly_one=True)
 
 def cap_find(folder, prefix, **kwargs):
     """Returns list of paths to matching cap files.
@@ -322,14 +329,14 @@ def cap_set(cap):
     print "### Creating Cmd App '%s' as a '%s' launcher..." % (cap[NAME], cap[ACTION])
     if not FOLDER in cap:  cap[FOLDER]=CMD_DIR
     if cap[ACTION] not in ACTIONS:
-        error('Action %r must be one of: %s' % ', '.join(ACTIONS))
+        error('Action %r must be one of: %s' % (cap[ACTION], ', '.join(ACTIONS)))
     cap_delete(cap)
     path = cap_path(cap)
     if not os.path.exists(path):
         os.makedirs('%s/Contents/MacOS' % path)
     write_file('%s/Contents/PkgInfo' % path, 'APPLaplt')
     write_file('%s/Contents/Info.plist' % path, INFO_PLIST_BODY)
-    excludes   = ['type', 'folder', 'name', 'action', 'target', 'docstr', 'source', 'path']
+    excludes   = ['body', 'type', 'folder', 'name', 'action', 'target', 'docstr', 'source', 'path']
     fixed_keys = '# action: %s\n# target: %s' % (cap['action'], cap['target'])
     other_keys = '\n'.join(['# %s: %s' % (k, v) for k,v in cap.items() if k not in excludes])
     contents = '%s\n%s\n%s\n' % (PYTHON_LAUNCHER_PREFIX, fixed_keys, other_keys)
@@ -343,7 +350,6 @@ def cap_delete(cap):
     path = cap_path(cap)
     if os.path.exists(path):
         os.system('rm -r "%s"' % path)
-
 
 def cap_get_all(folder):
     """Returns list of all cap maps for each cap under 'folder'"""
@@ -372,7 +378,6 @@ def cap_to_str(cap):
 ###   SUPPORT FUNCTIONS
 
 def write_file(path, contents):
-    print "writing %s as '%s'" % (path, contents)
     with open(path,'w') as f:
         f.write(contents)
 

@@ -12,6 +12,7 @@ KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/ll.app/Contents/MacOS'
 TRAMPOLINE_FILE = '/tmp/ll_trampoline'
 
+DEBUG = False
 PATH = 'path'
 ACTION = 'action'
 TARGET = 'target'
@@ -33,13 +34,13 @@ def main():
 def cmd_launch(argv):
     now_in_console = argv[1]=='--now_in_console'
     keys = appkeys(argv[2])
-    if keys.get(IO) in ['console', 'pinned'] and not now_in_console:
+    if (DEBUG or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
         print "Trampoline into console"
         write_file(TRAMPOLINE_FILE, '#!/bin/sh\n%s/launcher.py --now_in_console "%s"\n' % (APP_SRC_FOLDER, keys[PATH]))
         os.system('chmod 755 "%s"' % TRAMPOLINE_FILE)
         os.system('open "%s"' % TRAMPOLINE_FILE)
         return
-    if now_in_console:
+    if now_in_console and not DEBUG:
         print '\033[2J\n'
     else:
         for k,v in keys.iteritems():
@@ -59,6 +60,8 @@ def cmd_launch(argv):
         raw_input()
 
 
+def type_app(keys):
+    os.system('open "%s"' % keys[TARGET])
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')
