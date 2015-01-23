@@ -23,13 +23,18 @@ USAGE = \
     c  name type target        CREATE cap with 'name' that links to a 'target' of a given 'type'
     e  name                    EDIT
     f  name                    captures current finder item
+    x  name                    EXECUTES 'name'd command
     ?                          print USAGE information
 
-    mv name newname
-    rm name
-
+    cp        name newname     <<<<
+    debug     name
+    install
+    mv        name newname
+    rm        name
     rebuild
     scan
+    test
+    usage
 
     
   CAP TYPES  (Command APplication Types)
@@ -154,9 +159,21 @@ def cmd_c():
 def cmd_e():
     """Edits the specified command."""
     prefix = arg(1, prompt='Enter name to edit> ')
-    path = cap_find_one(prefix)
+    path = cap_find_one(prefix) + '/Contents/MacOS/applet'
     print("EDIT command.  prefix=%s.  path=%s" % (prefix, path))
-    os.system('open -e "%s/Contents/MacOS/applet"' % path)
+    clean_file(path)
+    os.system('open -e "%s"' % path)
+    clean_file(path)
+
+def clean_file(path):
+    original = read_file(path)
+    contents = original.replace('\xe2', "'")
+    contents = contents.replace('\x80', "")
+    contents = contents.replace('\x98', "")
+    contents = contents.replace('\x99', "")
+    contents = contents.encode('ascii', 'ignore')
+    if original!=contents:
+        write_file(path, contents)
 
 
 def cmd_f():
@@ -175,6 +192,13 @@ def cmd_x():
     name = arg(1, prompt='Enter name of command to execute')
     path = cap_find_one(name)
     os.system('open "%s"' % path)
+
+
+def cmd_debug():
+    prefix = arg(1, prompt='Enter name to edit> ')
+    path = cap_path( cap_get( cap_find_one(prefix) ) )
+    print("### Debugging execution of CAP command %r" % path)
+    os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
 
 def cmd_install():
     script = '%s/ctrl' % APPLET_FOLDER
@@ -383,6 +407,10 @@ def cap_to_str(cap):
 def write_file(path, contents):
     with open(path,'w') as f:
         f.write(contents)
+
+def read_file(path):
+    with open(path,'r') as f:
+        return f.read()
 
 
 def arg(num, **kwargs):

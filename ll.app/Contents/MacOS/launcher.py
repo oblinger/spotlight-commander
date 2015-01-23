@@ -7,12 +7,12 @@ import os
 import re
 import traceback
 
+debug=False
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/ll.app/Contents/MacOS'
 TRAMPOLINE_FILE = '/tmp/ll_trampoline'
 
-DEBUG = False
 PATH = 'path'
 ACTION = 'action'
 TARGET = 'target'
@@ -21,11 +21,15 @@ IO = 'io'
 # chrome  nstr   shell  run   console   script
 
 def main():
-    a1 = os.sys.argv[1] if len(os.sys.argv)>1 else ''  
-    a2 = os.sys.argv[2] if len(os.sys.argv)>2 else ''  
-    os.system('echo Launcher ARGV %s' % os.sys.argv)
+    global debug
+    argv = os.sys.argv
+    print('### launcher.py called with: %s' % argv)
+    if len(argv)>1 and argv[1]=='--debug':
+        debug=True
+        argv = argv[1:]
+    a1 = argv[1] if len(argv)>1 else ''
     if a1=='--launch' or a1=='--now_in_console':
-        return cmd_launch(os.sys.argv)
+        return cmd_launch(argv)
     error("unknown command %r" % a1)
 
         
@@ -34,17 +38,19 @@ def main():
 def cmd_launch(argv):
     now_in_console = argv[1]=='--now_in_console'
     keys = appkeys(argv[2])
-    if (DEBUG or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
+    if (debug or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
         print "Trampoline into console"
-        write_file(TRAMPOLINE_FILE, '#!/bin/sh\n%s/launcher.py --now_in_console "%s"\n' % (APP_SRC_FOLDER, keys[PATH]))
+        write_file(TRAMPOLINE_FILE, '#!/bin/sh\n%s/launcher.py %s --now_in_console "%s"\n' %
+                   (APP_SRC_FOLDER, '--debug' if debug else '', keys[PATH]))
         os.system('chmod 755 "%s"' % TRAMPOLINE_FILE)
         os.system('open "%s"' % TRAMPOLINE_FILE)
         return
-    if now_in_console and not DEBUG:
-        print '\033[2J\n'
+    if now_in_console and not debug:
+        print '\033[0;0H\033[2J'
     else:
         for k,v in keys.iteritems():
             print "###   %s = %r" % (k,v)
+    print '\n\n'
 
     try:   fn=globals()['type_%s' % keys['action']]
     except KeyError:
@@ -55,7 +61,7 @@ def cmd_launch(argv):
         keys[IO]='pinned'
         print traceback.format_exc()
         #print sys.exc_info()[0]
-    if keys.get(IO)=='pinned':
+    if keys.get(IO)=='pinned' or debug:
         os.sys.stdout.write('\n(press RETURN to exit)')
         raw_input()
 
