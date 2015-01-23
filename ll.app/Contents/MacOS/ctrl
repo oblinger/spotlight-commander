@@ -154,7 +154,7 @@ def cmd_c():
 def cmd_e():
     """Edits the specified command."""
     prefix = arg(1, prompt='Enter name to edit> ')
-    path = cap_find(CMD_DIR, prefix, exactly_one=True)
+    path = cap_find_one(prefix)
     print("EDIT command.  prefix=%s.  path=%s" % (prefix, path))
     os.system('open -e "%s/Contents/MacOS/applet"' % path)
 
@@ -173,7 +173,7 @@ def cmd_f():
 
 def cmd_x():
     name = arg(1, prompt='Enter name of command to execute')
-    path = cap_find(CMD_DIR, name, exactly_one=True)
+    path = cap_find_one(name)
     os.system('open "%s"' % path)
 
 def cmd_install():
@@ -294,33 +294,36 @@ def cap_get(path):
             if body[:1]==['']: body = body[1:]
             if body[-1:]==['\n']:  body = body[:-1]
             if len(body)!=0:  keys[BODY]=body
+            if keys.get(ACTION) not in ACTIONS:
+                print('WARNING: Illegal action %r in %s' % (keys.get(ACTION), keys.get(NAME)))
             return keys
     except:
         return None
     return None
 
-def cap_file_one(prefix):
-    return cap_find(CMD_DIR, prefix, exactly_one=True)
-
-def cap_find(folder, prefix, **kwargs):
-    """Returns list of paths to matching cap files.
-    if 'only_one' then only one cap path is returned, and an error is generated
-    if more or fewer than one cap is found."""
-    exactly_one = kwargs.get('exactly_one')
-    prefix = prefix.lower()
-    paths = []
-    for name in os.listdir(folder):
-        path = '%s/%s' % (folder, name)
-        if name.lower().startswith(prefix) and cap_get(path):
-            paths.append(path)
-    if not exactly_one:
-        return paths
+def cap_find_one(prefix):
+    paths = cap_find_all(prefix)
+    if len(paths)>1:
+        paths2 = cap_find_all(prefix+'.')   # try looking for a case insensitive exact match
+        if len(paths2)==1: paths = paths2
     if len(paths)==0:
         error('Command App starting with "%s..." not found under %s' % (prefix, folder))
     if len(paths)>1:
         error('Required exactly one matching command for %s, but found %s' %
               (prefix, ', '.join(['/%s/' % os.path.basename(p) for p in paths])))
     return paths[0]
+
+def cap_find_all(prefix, folder=CMD_DIR):
+    """Returns list of paths to matching cap files.
+    if 'only_one' then only one cap path is returned, and an error is generated
+    if more or fewer than one cap is found."""
+    prefix = prefix.lower()
+    paths = []
+    for name in os.listdir(folder):
+        path = '%s/%s' % (folder, name)
+        if name.lower().startswith(prefix) and cap_get(path):
+            paths.append(path)
+    return paths
 
 
 
