@@ -71,11 +71,14 @@ def type_app(keys):
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')
-    #type_script(keys)
 def type_doc(keys):
     os.system('open "%s"' % keys[TARGET])
 def type_folder(keys):
     os.system('open "%s"' % keys[TARGET])
+def type_nstr(keys):
+    osa('tell application "growl" to activate')
+    write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
+    osa('tell application "Notester" to activate')
 def type_script(keys, prefix = ''):
     template = {'python':'/usr/bin/env python "%s"', 'sh':'/bin/sh "%s"'}.get(keys.get(TARGET))
     if not template: error("Unknown script interpreter.")

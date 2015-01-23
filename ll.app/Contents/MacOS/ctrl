@@ -6,8 +6,7 @@
 import re
 import os
 import subprocess
-
-
+import textwrap
 
 CMD_DIR = '/ob/cmd'     # Bug.  should be located in home folder
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
@@ -20,7 +19,7 @@ USAGE = \
 
   CMD
     b  name                    captures current BROWSER url
-    c  name type target        CREATE cap with 'name' that links to a 'target' of a given 'type'
+    c  name type target        CREATE 'name' that links 'typed' 'target'
     e  name                    EDIT
     f  name                    captures current finder item
     x  name                    EXECUTES 'name'd command
@@ -29,6 +28,7 @@ USAGE = \
     cp        name newname     <<<<
     debug     name
     install
+    ls
     mv        name newname
     rm        name
     rebuild
@@ -41,11 +41,20 @@ USAGE = \
     app          launches 'target' application
     doc
     folder
-    script       executes applet file itself as a script.
-                 'target' is either 'python' or 'sh' denoting the interpter to use.
+    script       executes applet file itself as a script
+                 'target' specified either 'python' or 'sh' interpter
     sh           executes 'target' as a sh shell script line
 """
 
+
+APPLET_PREFIX = \
+"""#!/usr/bin/osascript
+do shell script   ("/usr/bin/env ruby " & (get POSIX path of (path to home folder)) as string & "cmd/_launcher.rb -x \\"" & (POSIX path of (path to me)) & "\\"") #$Cmd~File: v1.1-13.06.28
+"""
+
+PYTHON_LAUNCHER_PREFIX = \
+"""#!/usr/bin/env python /Applications/ll.app/Contents/MacOS/launcher.py --launch
+"""
 
 
 INFO_PLIST_BODY = \
@@ -103,24 +112,12 @@ INFO_PLIST_BODY = \
 </plist>
 """
 
-APPLET_PREFIX = \
-"""#!/usr/bin/osascript
-do shell script   ("/usr/bin/env ruby " & (get POSIX path of (path to home folder)) as string & "cmd/_launcher.rb -x \\"" & (POSIX path of (path to me)) & "\\"") #$Cmd~File: v1.1-13.06.28
-"""
-
-PYTHON_LAUNCHER_PREFIX = \
-"""#!/usr/bin/env python /Applications/ll.app/Contents/MacOS/launcher.py --launch
-"""
 
 def main():
     argv = os.sys.argv
-
     if len(argv)<2:
-        os.sys.stdout.write('CMD> ')
-        argv= ['cmd'] + raw_input().split()
-
+        argv= ['cmd'] + raw_input('CMD> ').split()
     a1 = argv[1] if len(argv)>1 else ''
-    a2 = argv[2] if len(argv)>2 else ''
 
     if a1[0:2]=='--':   base = a1[2:]
     elif a1[0:1]=='-':    base = a1[1:]
@@ -141,7 +138,7 @@ def main():
 
 def cmd_b():
     """Import doc link from BROWSER."""
-    name = arg(1, 'Enter name for URL link> ')
+    name = arg(1, 'Enter name for URL link')
     if not name: error('No name specified.')
     url = get_chrome_url()
     cap_set({NAME:name, ACTION:'url', TARGET:url})
@@ -149,16 +146,16 @@ def cmd_b():
     
 def cmd_c():
     """Creates a new cmd app"""
-    name   = arg(1, prompt='Name of cap to create> ', error_string='Name required.')
-    action = arg(2, prompt='Cap action (%s)> ' % ', '.join(ACTIONS), error_string='Action required.')
-    target = arg(3, prompt='Cap target> ', error_string='Target required')
+    name   = arg(1, prompt='Name of cap to create', error_string='Name required.')
+    action = arg(2, prompt='Cap action (%s)' % ', '.join(ACTIONS), error_string='Action required.')
+    target = arg(3, prompt='Cap target', error_string='Target required')
     keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
     cap_set(keys)
 
 
 def cmd_e():
     """Edits the specified command."""
-    prefix = arg(1, prompt='Enter name to edit> ')
+    prefix = arg(1, prompt='Enter name to edit')
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
     print("EDIT command.  prefix=%s.  path=%s" % (prefix, path))
     clean_file(path)
@@ -188,14 +185,28 @@ def cmd_f():
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
+def cmd_v():
+    name = arg(1, prompt='Enter name of command to view')
+    path = cap_find_one(name)
+    os.system('open "%s"' % path)
+
 def cmd_x():
     name = arg(1, prompt='Enter name of command to execute')
     path = cap_find_one(name)
     os.system('open "%s"' % path)
 
 
+def cmd_cp():
+    name    = arg(1, prompt='Enter name of command to copy')
+    newname = arg(2, prompt='Enter new destination name for copy')
+    path = cap_find_one(name)
+    cap  = cap_get(path)
+    print '### Copying %r to %r' % (name, newname)
+    cap[NAME] = newname
+    cap_set(cap)
+
 def cmd_debug():
-    prefix = arg(1, prompt='Enter name to edit> ')
+    prefix = arg(1, prompt='Enter name to edit')
     path = cap_path( cap_get( cap_find_one(prefix) ) )
     print("### Debugging execution of CAP command %r" % path)
     os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
@@ -207,9 +218,24 @@ def cmd_install():
     cap_set({NAME:'lle', ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'})
     cap_set({NAME:'llf', ACTION:'sh', TARGET:'%s -f' % script})
 
+def cmd_ls():
+    prefix = arg(1, default='')
+    names = [cap_get(path)[NAME].ljust(18) for path in cap_find_all(prefix)]
+    print 'COMMANDS:\n%s\n\n' % textwrap.fill('  '.join(names),80)
+
+def cmd_mv():
+    name    = arg(1, prompt='Enter name of command to move')
+    newname = arg(2, prompt='Enter new destination name for move')
+    path = cap_find_one(name)
+    cap  = cap_get(path)
+    print '### Moving %r to %r' % (name, newname)
+    cap_delete(cap)
+    cap[NAME] = newname
+    cap_set(cap)
+
 def cmd_rebuild():
     folder = CMD_DIR
-    if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s> ' % folder):
+    if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s' % folder):
         return
     for cap in cap_get_all(folder):
         print "Rebuilding %r" % cap[NAME]
@@ -217,7 +243,7 @@ def cmd_rebuild():
 
 def cmd_rm():
     name =  arg(1, prompt='Enter name of command to remove')
-    cap  = cap_get(cap_file_one(name))
+    cap  =  cap_get(cap_find_one(name))
     print '### Deleting CAP "%s"' % cap[NAME]
     cap_delete(cap)
 
@@ -315,7 +341,7 @@ def cap_get(path):
                     if result:
                         body = []
                         keys[result.group(1).strip()] = result.group(2).strip()
-            if body[:1]==['']: body = body[1:]
+            #if body[:1]==['']: body = body[1:]
             if body[-1:]==['\n']:  body = body[:-1]
             if len(body)!=0:  keys[BODY]=body
             if keys.get(ACTION) not in ACTIONS:
@@ -325,8 +351,8 @@ def cap_get(path):
         return None
     return None
 
-def cap_find_one(prefix):
-    paths = cap_find_all(prefix)
+def cap_find_one(prefix, folder=CMD_DIR):
+    paths = cap_find_all(prefix, folder)
     if len(paths)>1:
         paths2 = cap_find_all(prefix+'.')   # try looking for a case insensitive exact match
         if len(paths2)==1: paths = paths2
@@ -422,7 +448,7 @@ def arg(num, **kwargs):
     if len(os.sys.argv)>num+1:
         return os.sys.argv[num+1]
     if 'prompt' in kwargs:
-        value = raw_input(prompt)
+        value = raw_input(prompt+': ')
         if value.strip() != '':
             return value
     if 'default' in kwargs:
@@ -515,45 +541,3 @@ def osa_fn(*lines):
 
 main()
 
-
-
-"""
-
-
-OLD
-
-
-
-def scan_process_file(keys):
-    path    = keys.get('path')
-    name    = os.path.basename(path)
-    base    = os.path.splitext(name)[0]
-    newpath = '%s/%s' % (CMD_DIR, base)
-    action  = keys.get('action')
-    target  = keys.get('target')
-    if action and action not in ['doc', 'folder', 'app']:
-        print 'N:%s  A:%s   T:%s' % (base, keys.get('action'), keys.get('target'))
-    if action=='url':
-        print "Create URL shortcut   '%s'  to  '%s'" % (newpath, target)
-        create_webloc('%s/%s' % (CMD_DIR, base), target)
-        os.system('rm "%s"' % (path,))
-    if action=='doc':
-        pass
-        #print "Doc shortcut  '%s' to '%s'" % (newpath, target)
-def get_file_info(path):
-    "Extracts the key value pairs from a cmd file.  Standard keys include:
-       "
-    keys = {'path':path}
-    if os.path.isfile(path):
-        keys['type']='file'
-        with open(path, 'r') as f:
-            for line in f.readlines():
-                idx = line.find(':')
-                if idx!=-1 and line.startswith('# '):
-                    k = line[2:idx].strip()
-                    v = line[idx+1:].strip()
-                    keys[k]=v
-    return keys
-
-
-"""
