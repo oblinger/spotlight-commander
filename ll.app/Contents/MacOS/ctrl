@@ -8,39 +8,49 @@ import os
 import subprocess
 import textwrap
 
-CMD_DIR = '/ob/cmd'     # Bug.  should be located in home folder
+# todo:  installer, move /ob/cmd, add 'icon' to apps
+# add readme
+
+
+CMD_DIR = '%s/cmd' % os.getenv('HOME')
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
-SHORTCUTS = {'?':'usage'}
+SHORTCUTS = {'b':'browser', 'c':'create', 'cp':'copy', 'e':'edit',
+             'f':'finder',  'nb':'named_browser', 'nf':'named_finder',
+             'x':'execute', '?':'usage'}
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 
 USAGE = \
 """
+    *     COMMAND
+    b   --browser       name                captures current BROWSER url
+    c   --create        name type target    CREATE 'name' that links 'typed' 'target'
+    cp  --copy          name newname        COPIES command to new name
+        --debug         name                DEBUGS the execution of named command
+    e   --edit          name                EDIT
+    f   --finder        name                captures current finder item
+        --install                           INSTALLS special commands
+    ls  --list                              performs LS style list of commands
+    mv  --move          name newname        MOVES command to new name
+    nb  --named-browser name
+    nf  --named-finder  name
+        --rebuild                           scans all commands and REBUILDS them
+    rm  --remove        name                REMOVES command
+    v   --view          name
+    x   --execute       name                EXECUTES 'name'd command
+    ?   --usage                             prints this USAGE message
+        --scan
+        --test
 
-  CMD
-    b  name                    captures current BROWSER url
-    c  name type target        CREATE 'name' that links 'typed' 'target'
-    e  name                    EDIT
-    f  name                    captures current finder item
-    x  name                    EXECUTES 'name'd command
-    ?                          print USAGE information
+ * NOTE: single or double character is a shortcut for the command to its right.
 
-    cp        name newname     <<<<
-    debug     name
-    install
-    ls
-    mv        name newname
-    rm        name
-    rebuild
-    scan
-    test
-    usage
 
     
   CAP TYPES  (Command APplication Types)
     app          launches 'target' application
     doc
     folder
+    nstr         opens name in notester
     script       executes applet file itself as a script
                  'target' specified either 'python' or 'sh' interpter
     sh           executes 'target' as a sh shell script line
@@ -114,15 +124,22 @@ INFO_PLIST_BODY = \
 
 
 def main():
+    if not os.path.exists('%s/ctrl' % APPLET_FOLDER):
+        print "Copy the app into the /Applications folder and re-run."
+        error("Application must run from the /Applications folder.")
     argv = os.sys.argv
     if len(argv)<2:
+        cmd_install()
         argv= ['cmd'] + raw_input('CMD> ').split()
+        if len(argv)<=1:
+            os.sys.exit(0)
     a1 = argv[1] if len(argv)>1 else ''
 
     if a1[0:2]=='--':   base = a1[2:]
     elif a1[0:1]=='-':    base = a1[1:]
     else: base = a1
     base = SHORTCUTS.get(base) or base
+    base = base.lower().replace('-', '_')
     try:   fn=globals()['cmd_%s' % base]     # Try calling the appropriate 'cmd_...' function
     except KeyError:
         print "ERROR:  Unknown command '%s'" % a1
@@ -135,16 +152,23 @@ def main():
 ################################################################################
 ###  COMMANDS
 
-
-def cmd_b():
+def cmd_browser(name=None):
     """Import doc link from BROWSER."""
-    name = arg(1, 'Enter name for URL link')
+    name = name or arg(1, 'Enter name for URL link')
     if not name: error('No name specified.')
     url = get_chrome_url()
     cap_set({NAME:name, ACTION:'url', TARGET:url})
 
-    
-def cmd_c():
+def cmd_copy():
+    name    = arg(1, prompt='Enter name of command to copy')
+    newname = arg(2, prompt='Enter new destination name for copy')
+    path = cap_find_one(name)
+    cap  = cap_get(path)
+    print '### Copying %r to %r' % (name, newname)
+    cap[NAME] = newname
+    cap_set(cap)
+
+def cmd_create():
     """Creates a new cmd app"""
     name   = arg(1, prompt='Name of cap to create', error_string='Name required.')
     action = arg(2, prompt='Cap action (%s)' % ', '.join(ACTIONS), error_string='Action required.')
@@ -152,8 +176,13 @@ def cmd_c():
     keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
     cap_set(keys)
 
+def cmd_debug():
+    prefix = arg(1, prompt='Enter name to edit')
+    path = cap_path( cap_get( cap_find_one(prefix) ) )
+    print("### Debugging execution of CAP command %r" % path)
+    os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
 
-def cmd_e():
+def cmd_edit():
     """Edits the specified command."""
     prefix = arg(1, prompt='Enter name to edit')
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
@@ -173,57 +202,40 @@ def clean_file(path):
         write_file(path, contents)
 
 
-def cmd_f():
+def cmd_finder(name=None):
     """Import doc link from FINDER."""
     target_folder =  get_finder_path()[:-1]   # strip trailing '/'
     target_file = get_clipboard()
     target = target_folder+'/'+target_file
-    name = os.path.splitext(target_file)[0]
+    name = name or os.path.splitext(target_file)[0]
     if not os.path.exists(target):
         error("Could not find file '%s'" % target)
     print "NAME:%s   TARGET:%s   DIR:%s  FILE:%s" % (name, target, target_folder, target_file)
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-def cmd_v():
-    name = arg(1, prompt='Enter name of command to view')
-    path = cap_find_one(name)
-    os.system('open "%s"' % path)
-
-def cmd_x():
-    name = arg(1, prompt='Enter name of command to execute')
-    path = cap_find_one(name)
-    os.system('open "%s"' % path)
-
-
-def cmd_cp():
-    name    = arg(1, prompt='Enter name of command to copy')
-    newname = arg(2, prompt='Enter new destination name for copy')
-    path = cap_find_one(name)
-    cap  = cap_get(path)
-    print '### Copying %r to %r' % (name, newname)
-    cap[NAME] = newname
-    cap_set(cap)
-
-def cmd_debug():
-    prefix = arg(1, prompt='Enter name to edit')
-    path = cap_path( cap_get( cap_find_one(prefix) ) )
-    print("### Debugging execution of CAP command %r" % path)
-    os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
-
-def cmd_install():
+def cmd_install(reinstall=False):
+    if not reinstall and os.path.exists(CMD_DIR):
+        return
+    print '\nCONFIGURING SPOTLIGHT-NINJA\n'
     script = '%s/ctrl' % APPLET_FOLDER
+    if not os.path.exists(CMD_DIR):
+        print 'Creating folder %r' % CMD_DIR
+        os.makedirs(CMD_DIR)
+    cap_set({NAME:'ll',  ACTION:'sh', TARGET:'%s'    % script, IO: 'console'})
     cap_set({NAME:'llb', ACTION:'sh', TARGET:'%s -b' % script, IO: 'console'})
     cap_set({NAME:'llc', ACTION:'sh', TARGET:'%s -c' % script, IO: 'console'})
     cap_set({NAME:'lle', ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'})
     cap_set({NAME:'llf', ACTION:'sh', TARGET:'%s -f' % script})
+    cap_set({NAME:'llnb',ACTION:'sh', TARGET:'%s -nb'% script, IO: 'console'})
+    cap_set({NAME:'llnf',ACTION:'sh', TARGET:'%s -nf'% script, IO: 'console'})
 
-def cmd_ls():
+def cmd_list():
     prefix = arg(1, default='')
     names = [cap_get(path)[NAME].ljust(18) for path in cap_find_all(prefix)]
     print 'COMMANDS:\n%s\n\n' % textwrap.fill('  '.join(names),80)
 
-def cmd_mv():
+def cmd_move():
     name    = arg(1, prompt='Enter name of command to move')
     newname = arg(2, prompt='Enter new destination name for move')
     path = cap_find_one(name)
@@ -233,6 +245,14 @@ def cmd_mv():
     cap[NAME] = newname
     cap_set(cap)
 
+def cmd_named_browser():
+    """Prompts user for name for link to URL in the top Chrome tab"""
+    cmd_browser(prompt('Enter name for link to current Chrome URL'))
+
+def cmd_named_finder():
+    """Prompts user for name for link to document selected in finder"""
+    cmd_finder(prompt('Enter name for link to file selected & clipboarded in Finder'))
+
 def cmd_rebuild():
     folder = CMD_DIR
     if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s' % folder):
@@ -241,13 +261,23 @@ def cmd_rebuild():
         print "Rebuilding %r" % cap[NAME]
         cap_set(cap)
 
-def cmd_rm():
+def cmd_remove():
     name =  arg(1, prompt='Enter name of command to remove')
     cap  =  cap_get(cap_find_one(name))
     print '### Deleting CAP "%s"' % cap[NAME]
     cap_delete(cap)
 
-def cmd_scan(folder=CMD_DIR+'/old'):
+def cmd_view():
+    name = arg(1, prompt='Enter name of command to view')
+    path = cap_find_one(name)
+    os.system('open "%s"' % path)
+
+def cmd_execute():
+    name = arg(1, prompt='Enter name of command to execute')
+    path = cap_find_one(name)
+    os.system('open "%s"' % path)
+
+def cmd_test(folder=CMD_DIR+'/old'):
     for name in os.listdir(folder):
         path = '%s/%s' % (folder, name)
         keys = cap_get(path)
@@ -258,18 +288,10 @@ def cmd_scan(folder=CMD_DIR+'/old'):
         #if keys:  cap_set(keys)
         #if keys:  scan_rebuild_cap(keys)
         #scan_process_file(keys)
-
 def scan_rebuild_cap(keys):
     if keys[TYPE]=='webloc':
         pass
         cap_set(keys)
-
-
-
-
-def cmd_test():
-    print 'test it'
-    cap_set({'folder':'/ob/data/MyDesk', 'name':'test3', 'action':'folder', 'target':'/ob/data'})
 
 def cmd_usage():
     print USAGE
@@ -458,7 +480,7 @@ def arg(num, **kwargs):
 
 
 def prompt(prompt):
-    os.sys.stdout.write(prompt)
+    os.sys.stdout.write(prompt+': ')
     return raw_input()
 
 

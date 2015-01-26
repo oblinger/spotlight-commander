@@ -1,9 +1,8 @@
-#!/usr/bin/env python /Applications/ll.app/Contents/MacOS/launcher.py --launch
+#!/usr/bin/env python
 
-# action: script
-# target: sh
-# console: true
+import os
 
-xx
+folder = os.path.dirname(os.path.abspath(__file__))
+os.system('open "%s/ctrl"' % folder)
 
 

@@ -39,7 +39,7 @@ def cmd_launch(argv):
     now_in_console = argv[1]=='--now_in_console'
     keys = appkeys(argv[2])
     if (debug or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
-        print "Trampoline into console"
+        print "Trampoline into console:  %s" % cap_to_str(keys)
         write_file(TRAMPOLINE_FILE, '#!/bin/sh\n%s/launcher.py %s --now_in_console "%s"\n' %
                    (APP_SRC_FOLDER, '--debug' if debug else '', keys[PATH]))
         os.system('chmod 755 "%s"' % TRAMPOLINE_FILE)
@@ -73,6 +73,8 @@ def type_console(keys):
     osa('tell application "Terminal" to do script "echo hello"')
 def type_doc(keys):
     os.system('open "%s"' % keys[TARGET])
+def type_edit(keys):
+    os.system('open -e "%s"' % keys[TARGET])
 def type_folder(keys):
     os.system('open "%s"' % keys[TARGET])
 def type_nstr(keys):
@@ -110,6 +112,11 @@ def error(err_str):
 def write_file(path, contents):
     with open(path,'w') as f:
         f.write(contents)
+
+
+def cap_to_str(cap):
+    """Returns string summary of a cap's parameters."""
+    return 'P:%s  A:%s  T:%s' % (cap['path'], cap['action'], cap['target'])
 
 
 
