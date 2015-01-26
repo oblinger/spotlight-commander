@@ -14,9 +14,10 @@ import textwrap
 
 CMD_DIR = '%s/cmd' % os.getenv('HOME')
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
-SHORTCUTS = {'b':'browser', 'c':'create', 'cp':'copy', 'e':'edit',
-             'f':'finder',  'nb':'named_browser', 'nf':'named_finder',
-             'x':'execute', '?':'usage'}
+SHORTCUTS = {'b':'browser',  'c':'create', 'cp':'copy',  'e':'edit',
+             'f':'finder',   'ls':'list',  'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
+             'rm':'remove',  'v':'view',
+             'x':'execute',  '?':'usage'}
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 
@@ -129,7 +130,7 @@ def main():
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
     if len(argv)<2:
-        cmd_install()
+        cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
         if len(argv)<=1:
             os.sys.exit(0)
@@ -214,7 +215,7 @@ def cmd_finder(name=None):
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-def cmd_install(reinstall=False):
+def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
         return
     print '\nCONFIGURING SPOTLIGHT-NINJA\n'
@@ -222,13 +223,17 @@ def cmd_install(reinstall=False):
     if not os.path.exists(CMD_DIR):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
-    cap_set({NAME:'ll',  ACTION:'sh', TARGET:'%s'    % script, IO: 'console'})
-    cap_set({NAME:'llb', ACTION:'sh', TARGET:'%s -b' % script, IO: 'console'})
-    cap_set({NAME:'llc', ACTION:'sh', TARGET:'%s -c' % script, IO: 'console'})
-    cap_set({NAME:'lle', ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'})
-    cap_set({NAME:'llf', ACTION:'sh', TARGET:'%s -f' % script})
-    cap_set({NAME:'llnb',ACTION:'sh', TARGET:'%s -nb'% script, IO: 'console'})
-    cap_set({NAME:'llnf',ACTION:'sh', TARGET:'%s -nf'% script, IO: 'console'})
+    cap_set({NAME:'ll',   ACTION:'sh', TARGET:'%s'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llb',  ACTION:'sh', TARGET:'%s -b' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llcp', ACTION:'sh', TARGET:'%s cp' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llc',  ACTION:'sh', TARGET:'%s -c' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'lle',  ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llf',  ACTION:'sh', TARGET:'%s -f' % script},                verbose=True)
+    cap_set({NAME:'llls', ACTION:'sh', TARGET:'%s ls' % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'llmv', ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llnb', ACTION:'sh', TARGET:'%s -nb'% script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llnf', ACTION:'sh', TARGET:'%s -nf'% script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llrm', ACTION:'sh', TARGET:'%s rm' % script, IO: 'console'}, verbose=True)
 
 def cmd_list():
     prefix = arg(1, default='')
@@ -400,8 +405,9 @@ def cap_find_all(prefix, folder=CMD_DIR):
 
 
 
-def cap_set(cap):
-    print "### Creating Cmd App '%s' as a '%s' launcher..." % (cap[NAME], cap[ACTION])
+def cap_set(cap, **kwargs):
+    verbose = kwargs.get('verbose', True)
+    if verbose: print "### Creating Cmd App '%s' as a '%s' launcher..." % (cap[NAME], cap[ACTION])
     if not FOLDER in cap:  cap[FOLDER]=CMD_DIR
     if cap[ACTION] not in ACTIONS:
         error('Action %r must be one of: %s' % (cap[ACTION], ', '.join(ACTIONS)))
