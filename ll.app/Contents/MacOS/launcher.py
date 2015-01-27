@@ -51,8 +51,9 @@ def cmd_launch(argv):
         for k,v in keys.iteritems():
             print "###   %s = %r" % (k,v)
     print '\n\n'
-    with open(LAUNCH_LOG, 'w+') as f:
+    with open(LAUNCH_LOG, 'a+') as f:
         f.write(json.dumps(argv[2:]))
+        f.write('\n')
 
     try:   fn=globals()['type_%s' % keys['action']]
     except KeyError:

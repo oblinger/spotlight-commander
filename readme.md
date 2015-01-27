@@ -19,10 +19,21 @@ tbd
 
 
 
-# Usage
+# Basic Usage  (Proposed)
 
-This usage pattern is PROPOSED -- it is not currently implemented.
+Operating at the speed of thought.
 
+- Think of (or invent) a name for the 'place' where you want you computer to go.
+
+- Type that name into spotlight.  (Press Command-space to open spotlight)
+
+- If your computer did not go to the place you intended, then manually take your computer there.
+
+- type 'ss' (for spotlight save) into spotlight in order to save this place for next time.
+
+
+
+# NOTES
 
 TYPE A NAME INTO SPOTLIGHT --
     Type the name of the 'place' where you want to be.  

@@ -244,10 +244,13 @@ def cmd_install(reinstall=True):
     cap_set({NAME:'llnf', ACTION:'sh', TARGET:'%s -nf' % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'llrm', ACTION:'sh', TARGET:'%s rm'  % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'llv',  ACTION:'sh', TARGET:'%s -v'  % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'COPY', ACTION:'sh', TARGET:'%s copy' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'FIX',  ACTION:'sh', TARGET:'%s fix'  % script},                verbose=True)
-    cap_set({NAME:'NEW',  ACTION:'sh', TARGET:'%s new'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'SET',  ACTION:'sh', TARGET:'%s set'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'COPY', ACTION:'sh', TARGET:'%s copy'% script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'FIX',  ACTION:'sh', TARGET:'%s fix' % script},                verbose=True)
+    cap_set({NAME:'NEW',  ACTION:'sh', TARGET:'%s new' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'SET',  ACTION:'sh', TARGET:'%s set' % script, IO: 'console'}, verbose=True)
+    #cap_set({NAME:'ss',   ACTION:'sh', TARGET:'%s ss'  % script}, verbose=True)
+    cap_set({NAME:'ss',   ACTION:'sh', TARGET:'%s ss'  % script, IO: 'console'}, verbose=True)
+
 
 def cmd_list():
     prefix = arg(1, default='')
@@ -302,8 +305,49 @@ def cmd_set(ask=True):
         cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
     cap_set(cap)
 
+def cmd_ss0():
+    cap = get_current_link();  cap[NAME]='curr'
+    cap_set(cap)
+    os.system('%s/ctrl -x ss1' % APPLET_FOLDER)
 
-def cmd_test(folder=CMD_DIR+'/old'):
+
+
+# BUG what about when there is no last command or curr cap???
+def cmd_ss(ask=True):
+    last_name = last_command_name()
+    last_cap  = last_name and cap_get(cap_find_one(last_name+'.'))
+    if ask:
+        print "\nSET COMMAND\n"
+        name = prompt('Set command named', last_name)
+        cur_cap = get_current_link()
+        print
+        print "Type 'c' to set %r to %s" % (name, cap_desc(cur_cap))
+        if last_cap:  print "Type 'p' to set %r to %s" % (name, cap_desc(last_cap))
+        print "Or type: 'doc', 'folder', or 'url' then paste file path or URL"
+        print
+        print
+        cmd = prompt('Set %r as' % name)
+        if cmd == 'p':
+            cap = last_cap
+        elif cmd == 'c':
+            cap = cur_cap
+        elif cmd.strip() == '':
+            return
+        else:
+            cap = {NAME:name}
+            idx = cmd.index(' ')
+            cap[ACTION]=cmd[:idx].strip()
+            cap[TARGET]=cmd[idx:].strip()
+            if cap[ACTION] not in ACTIONS:
+                error("Command link to a known action: %s" % ACTIONS_NAMES)
+        cap_set(cap)
+
+def cmd_test():
+    send_key(48, 'command down')
+
+
+
+def cmd_test_scan(folder=CMD_DIR+'/old'):
     for name in os.listdir(folder):
         path = '%s/%s' % (folder, name)
         keys = cap_get(path)
@@ -480,6 +524,12 @@ def cap_to_str(cap):
     """Returns string summary of a cap's parameters."""
     return 'N:%s  A:%s  T:%s' % (cap[NAME], cap[ACTION], cap[TARGET])
 
+DESC_FORMATS = {'doc':'open document %r', 'folder': 'open folder %r', 'app':'launch app %r'}
+
+def cap_desc(cap):
+    a = cap[ACTION]
+    return DESC_FORMATS.get(a,'launch %s %%r' % a) % cap[TARGET]
+
 
 
 
@@ -489,30 +539,49 @@ def cap_to_str(cap):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
-
 def get_current_link():
+    send_key(48, 'command down')
+    #print 'waiting to check front app'
+    time.sleep(0.2)
+    cur_cap = get_current_link0()
+    #time.sleep(1)
+    send_key(48, 'command down')
+    #print 'checked %r' % cur_cap
+    #cur_cap   = cap_get(cap_find_one('curr.'))
+    return cur_cap
+
+def get_current_link0():
     cap = {}
     current_app = get_app_in_focus()
+    with open('/tmp/tmp', 'w') as f: f.write('cur app %r ' % current_app)
     if current_app=='Google Chrome':
         cap[TARGET] = get_chrome_url()
         cap[ACTION] = 'url'
     elif current_app=='Finder':
         cap[TARGET] = get_finder_selection_path()
         cap[ACTION] =  'doc'
+    elif current_app=='':
+        cap[TARGET] = 'none'
+        cap[ACTION] = 'none'
     else:
         cap[ACTION] = 'app'
         cap[TARGET] = current_app
     return cap
 
 def last_command_name():
-    last_cmd_name = os.path.dirname(os.path.dirname(os.path.dirname(last_command()[0])))
-    return os.path.splitext(os.path.basename(last_cmd_name))[0]
+    """Returns the last launched command that is not in the ignore list."""
+    IGNORE = ['ss', 'ss1']
+    def get_name(args):
+        fldr = os.path.dirname(os.path.dirname(os.path.dirname(args[0])))
+        return os.path.splitext(os.path.basename(fldr))[0].encode('utf-8')
+    names = [get_name(args) for args in last_commands(20)]
+    #print "Last commands: %s" % ', '.join(names)
+    names = [n for n in names if n not in IGNORE]
+    return names[-1] if len(names)>0 else None
 
-def last_command():
+def last_commands(n):
     with open(LAUNCH_LOG, 'r') as f:
-        return json.loads(f.readlines()[-1])
-
-
+        return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
 
 def write_file(path, contents):
     with open(path,'w') as f:
@@ -542,7 +611,7 @@ def arg(num, **kwargs):
 
 
 def prompt(prompt, default_value=''):
-    dv =  '(%s)' % default_value if default_value else ''
+    dv =  ' (%s)' % default_value if default_value else ''
     val = raw_input(prompt+dv+': ')
     return val or default_value
 
@@ -593,10 +662,11 @@ def send_keys(keys, using=None):
     using = "using %s" % using if using else ''
     osa("Tell Application \"System Events\" to keystroke \"%s\" %s" % (keys, using))
 
-def send_key(keycode):
+def send_key(keycode, using=''):
     """Send applescript key code to application
        Download  'key codes' from app store to get codes"""
-    osa("Tell Application \"System Events\" to key code %s" % (keycode,))
+    if using: using = 'using %s' % using
+    osa("Tell Application \"System Events\" to key code %s %s" % (keycode, using))
 
 # from  http://www.macdrifter.com/2011/12/python-and-the-mac-clipboard.html
 def get_clipboard():
