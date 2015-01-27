@@ -6,12 +6,14 @@
 import os
 import re
 import traceback
+import json
 
 debug=False
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/ll.app/Contents/MacOS'
 TRAMPOLINE_FILE = '/tmp/ll_trampoline'
+LAUNCH_LOG = '%s/.ll_launchlog' % os.getenv('HOME')
 
 PATH = 'path'
 ACTION = 'action'
@@ -32,8 +34,6 @@ def main():
         return cmd_launch(argv)
     error("unknown command %r" % a1)
 
-        
-    
 
 def cmd_launch(argv):
     now_in_console = argv[1]=='--now_in_console'
@@ -51,6 +51,8 @@ def cmd_launch(argv):
         for k,v in keys.iteritems():
             print "###   %s = %r" % (k,v)
     print '\n\n'
+    with open(LAUNCH_LOG, 'w+') as f:
+        f.write(json.dumps(argv[2:]))
 
     try:   fn=globals()['type_%s' % keys['action']]
     except KeyError:
@@ -67,7 +69,7 @@ def cmd_launch(argv):
 
 
 def type_app(keys):
-    os.system('open "%s"' % keys[TARGET])
+    os.system('open -a "%s"' % keys[TARGET])
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')
@@ -77,6 +79,8 @@ def type_edit(keys):
     os.system('open -e "%s"' % keys[TARGET])
 def type_folder(keys):
     os.system('open "%s"' % keys[TARGET])
+def type_none(keys):
+    pass
 def type_nstr(keys):
     osa('tell application "growl" to activate')
     write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])

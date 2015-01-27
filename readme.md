@@ -15,10 +15,13 @@ effort.
 
 # Installation
 
+tbd
+
+
 
 # Usage
 
-This usage pattern is PROPSED -- it is not currently implemented.
+This usage pattern is PROPOSED -- it is not currently implemented.
 
 
 TYPE A NAME INTO SPOTLIGHT --

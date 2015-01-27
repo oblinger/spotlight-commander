@@ -7,12 +7,16 @@ import re
 import os
 import subprocess
 import textwrap
+import time
+import json
 
 # todo:  installer, move /ob/cmd, add 'icon' to apps
 # add readme
 
 
-CMD_DIR = '%s/cmd' % os.getenv('HOME')
+HOME = os.getenv('HOME')
+LAUNCH_LOG = '%s/.ll_launchlog' % HOME
+CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
 SHORTCUTS = {'b':'browser',  'c':'create', 'cp':'copy',  'e':'edit',
              'f':'finder',   'ls':'list',  'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
@@ -30,9 +34,11 @@ USAGE = \
         --debug         name                DEBUGS the execution of named command
     e   --edit          name                EDIT
     f   --finder        name                captures current finder item
+        --fix                               FIXES previous command
         --install                           INSTALLS special commands
     ls  --list                              performs LS style list of commands
     mv  --move          name newname        MOVES command to new name
+        --new           name                Creates a NEW command (with no action)
     nb  --named-browser name
     nf  --named-finder  name
         --rebuild                           scans all commands and REBUILDS them
@@ -40,13 +46,13 @@ USAGE = \
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
     ?   --usage                             prints this USAGE message
+        --set
         --scan
         --test
 
  * NOTE: single or double character is a shortcut for the command to its right.
 
 
-    
   CAP TYPES  (Command APplication Types)
     app          launches 'target' application
     doc
@@ -215,6 +221,9 @@ def cmd_finder(name=None):
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
+def cmd_fix():
+    cmd_set(False)
+
 def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
         return
@@ -223,17 +232,22 @@ def cmd_install(reinstall=True):
     if not os.path.exists(CMD_DIR):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
-    cap_set({NAME:'ll',   ACTION:'sh', TARGET:'%s'    % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llb',  ACTION:'sh', TARGET:'%s -b' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llcp', ACTION:'sh', TARGET:'%s cp' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llc',  ACTION:'sh', TARGET:'%s -c' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'lle',  ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llf',  ACTION:'sh', TARGET:'%s -f' % script},                verbose=True)
-    cap_set({NAME:'llls', ACTION:'sh', TARGET:'%s ls' % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'llmv', ACTION:'sh', TARGET:'%s -e' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llnb', ACTION:'sh', TARGET:'%s -nb'% script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llnf', ACTION:'sh', TARGET:'%s -nf'% script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llrm', ACTION:'sh', TARGET:'%s rm' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'ll',   ACTION:'sh', TARGET:'%s'     % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llb',  ACTION:'sh', TARGET:'%s -b'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llcp', ACTION:'sh', TARGET:'%s cp'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llc',  ACTION:'sh', TARGET:'%s -c'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'lle',  ACTION:'sh', TARGET:'%s -e'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llf',  ACTION:'sh', TARGET:'%s -f'  % script},                verbose=True)
+    cap_set({NAME:'llls', ACTION:'sh', TARGET:'%s ls'  % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'llmv', ACTION:'sh', TARGET:'%s -e'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llnb', ACTION:'sh', TARGET:'%s -nb' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llnf', ACTION:'sh', TARGET:'%s -nf' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llrm', ACTION:'sh', TARGET:'%s rm'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llv',  ACTION:'sh', TARGET:'%s -v'  % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'COPY', ACTION:'sh', TARGET:'%s copy' % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'FIX',  ACTION:'sh', TARGET:'%s fix'  % script},                verbose=True)
+    cap_set({NAME:'NEW',  ACTION:'sh', TARGET:'%s new'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'SET',  ACTION:'sh', TARGET:'%s set'  % script, IO: 'console'}, verbose=True)
 
 def cmd_list():
     prefix = arg(1, default='')
@@ -258,6 +272,13 @@ def cmd_named_finder():
     """Prompts user for name for link to document selected in finder"""
     cmd_finder(prompt('Enter name for link to file selected & clipboarded in Finder'))
 
+def cmd_new():
+    name = arg(1, prompt='Enter name of new (empty) command.')
+    caps = cap_find_all(name+'.')
+    if len(caps)==0:
+        cap_set({NAME:name, ACTION:'none', TARGET:'none'})
+        cmd_execute(name)
+
 def cmd_rebuild():
     folder = CMD_DIR
     if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s' % folder):
@@ -272,15 +293,15 @@ def cmd_remove():
     print '### Deleting CAP "%s"' % cap[NAME]
     cap_delete(cap)
 
-def cmd_view():
-    name = arg(1, prompt='Enter name of command to view')
-    path = cap_find_one(name)
-    os.system('open "%s"' % path)
+def cmd_set(ask=True):
+    last_cmd_name = last_command_name()
+    cap           = get_current_link()
+    if ask:
+        cap[NAME]   = prompt('Command to set', last_cmd_name)
+        cap[ACTION] = prompt('Command action', cap.get(ACTION, ''))
+        cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
+    cap_set(cap)
 
-def cmd_execute():
-    name = arg(1, prompt='Enter name of command to execute')
-    path = cap_find_one(name)
-    os.system('open "%s"' % path)
 
 def cmd_test(folder=CMD_DIR+'/old'):
     for name in os.listdir(folder):
@@ -302,7 +323,17 @@ def cmd_usage():
     print USAGE
     os.sys.stdout.write('HIT RETURN TO EXIT')
     raw_input()
-    
+
+def cmd_view():
+    last = last_command_name()
+    name = arg(1, prompt='Enter name of command to view', default=last)
+    cap = cap_get( cap_find_one(name) )
+    print 'COMMAND %s' % cap_to_str(cap)
+
+def cmd_execute(name=None):
+    name = name or arg(1, prompt='Enter name of command to execute')
+    path = cap_find_one(name)
+    os.system('open "%s"' % path)
 
 
 
@@ -324,7 +355,7 @@ TARGET  = 'target'   # REQ
 BODY    = 'body'     # opt  List of text lines after the last key value pair
 IO      = 'io'       # opt  non-null means that command should execute within a console window
 
-ACTIONS = ['app', 'doc', 'folder', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
+ACTIONS = ['app', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 
 
 def cap_get(path):
@@ -458,6 +489,31 @@ def cap_to_str(cap):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
+
+def get_current_link():
+    cap = {}
+    current_app = get_app_in_focus()
+    if current_app=='Google Chrome':
+        cap[TARGET] = get_chrome_url()
+        cap[ACTION] = 'url'
+    elif current_app=='Finder':
+        cap[TARGET] = get_finder_selection_path()
+        cap[ACTION] =  'doc'
+    else:
+        cap[ACTION] = 'app'
+        cap[TARGET] = current_app
+    return cap
+
+def last_command_name():
+    last_cmd_name = os.path.dirname(os.path.dirname(os.path.dirname(last_command()[0])))
+    return os.path.splitext(os.path.basename(last_cmd_name))[0]
+
+def last_command():
+    with open(LAUNCH_LOG, 'r') as f:
+        return json.loads(f.readlines()[-1])
+
+
+
 def write_file(path, contents):
     with open(path,'w') as f:
         f.write(contents)
@@ -473,6 +529,7 @@ def arg(num, **kwargs):
     prompt        = kwargs.get('prompt')
     error_string  = kwargs.get('error_string',
                                'Command is missing required argument #%s.' % num)
+    if default_value:   prompt = '%s (%s)' % (prompt, default_value)
     if len(os.sys.argv)>num+1:
         return os.sys.argv[num+1]
     if 'prompt' in kwargs:
@@ -484,10 +541,10 @@ def arg(num, **kwargs):
     error(error_string)
 
 
-
-def prompt(prompt):
-    os.sys.stdout.write(prompt+': ')
-    return raw_input()
+def prompt(prompt, default_value=''):
+    dv =  '(%s)' % default_value if default_value else ''
+    val = raw_input(prompt+dv+': ')
+    return val or default_value
 
 
 def error(err_str):
@@ -515,7 +572,12 @@ def create_webloc(path, url):
 
 
 
-
+def get_finder_selection_path():
+    """Returns the full path to the current selection within the Finder.
+    NOTE: Implementation is a bit of a hack.  command-C is sent to the current currnet app
+    and the clipboard is read."""
+    send_keys('c', 'command down')
+    return get_finder_path() + get_clipboard()
 
 def get_finder_path():
     """Returns path to folder in the top finder window"""
@@ -548,6 +610,23 @@ def set_clipboard(data):
     p.stdin.write(data)
     p.stdin.close()
     retcode = p.wait()
+
+
+def get_app_in_focus():
+    return osa_fn(
+'global frontApp, frontAppName, windowTitle',
+'set windowTitle to ""',
+'tell application "System Events"',
+'    set frontApp to first application process whose frontmost is true',
+'    set frontAppName to name of frontApp',
+'    tell process frontAppName',
+'        tell (1st window whose value of attribute "AXMain" is true)',
+'            set windowTitle to value of attribute "AXTitle"',
+'        end tell',
+'    end tell',
+'end tell',
+'do shell script "echo " & quoted form of frontAppName')
+#'return< {frontAppName, windowTitle}')
 
   
 # Executes multi-line applescript.  (cannot contain single quote (') character)
