@@ -189,11 +189,14 @@ def cmd_debug():
     print("### Debugging execution of CAP command %r" % path)
     os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
 
+
+# Bug:  'clean_file' may not run after edit, then file is permanently broken since it cannot cap_find_one
 def cmd_edit():
     """Edits the specified command."""
-    prefix = arg(1, prompt='Enter name to edit')
+    prefix = arg(1, prompt='Enter name to edit', default=None)
+    if not prefix:
+        return
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
-    print("EDIT command.  prefix=%s.  path=%s" % (prefix, path))
     clean_file(path)
     os.system('open -e "%s"' % path)
     clean_file(path)
@@ -248,7 +251,6 @@ def cmd_install(reinstall=True):
     cap_set({NAME:'FIX',  ACTION:'sh', TARGET:'%s fix' % script},                verbose=True)
     cap_set({NAME:'NEW',  ACTION:'sh', TARGET:'%s new' % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'SET',  ACTION:'sh', TARGET:'%s set' % script, IO: 'console'}, verbose=True)
-    #cap_set({NAME:'ss',   ACTION:'sh', TARGET:'%s ss'  % script}, verbose=True)
     cap_set({NAME:'ss',   ACTION:'sh', TARGET:'%s ss'  % script, IO: 'console'}, verbose=True)
 
 
@@ -314,17 +316,17 @@ def cmd_ss0():
 
 # BUG what about when there is no last command or curr cap???
 def cmd_ss(ask=True):
+    cur_cap   = get_current_link_while_in_console()
     last_name = last_command_name()
     last_cap  = last_name and cap_get(cap_find_one(last_name+'.'))
     if ask:
-        print "\nSET COMMAND\n"
+        print "SET COMMAND\n"
         name = prompt('Set command named', last_name)
-        cur_cap = get_current_link()
+        print "Type 'c' or 'p' to assign CURRENT WINDOW, or PREVIOUS COMMAND to '%s'" % name
+        print "Or type  'url', 'doc', 'folder' then paste any other target URL or path"
         print
-        print "Type 'c' to set %r to %s" % (name, cap_desc(cur_cap))
-        if last_cap:  print "Type 'p' to set %r to %s" % (name, cap_desc(last_cap))
-        print "Or type: 'doc', 'folder', or 'url' then paste file path or URL"
-        print
+        print "  Current:  %s" % cap_desc(cur_cap)
+        if last_cap:  print "  Previous: %s" % cap_desc(last_cap)
         print
         cmd = prompt('Set %r as' % name)
         if cmd == 'p':
@@ -340,7 +342,12 @@ def cmd_ss(ask=True):
             cap[TARGET]=cmd[idx:].strip()
             if cap[ACTION] not in ACTIONS:
                 error("Command link to a known action: %s" % ACTIONS_NAMES)
+        cap[NAME]=name
         cap_set(cap)
+        clear_screen()
+        print '\nSUCCESS.\n\nCommand "%s" now set to %s\n' % (cap[NAME], cap_desc(cap))
+        if yes_or_no('Launch command now', 'n' if cmd=='c' else 'y'):
+            cmd_execute(cap[NAME])
 
 def cmd_test():
     send_key(48, 'command down')
@@ -477,9 +484,6 @@ def cap_find_all(prefix, folder=CMD_DIR):
             paths.append(path)
     return paths
 
-
-
-
 def cap_set(cap, **kwargs):
     verbose = kwargs.get('verbose', True)
     if verbose: print "### Creating Cmd App '%s' as a '%s' launcher..." % (cap[NAME], cap[ACTION])
@@ -500,6 +504,8 @@ def cap_set(cap, **kwargs):
     app_path = '%s/Contents/MacOS/applet' % path
     write_file(app_path, contents)
     os.system('chmod 755 "%s"' % app_path)
+    os.system('mkdir "%s/Contents/Resources"' % path)
+    os.system('cp "%s/../Resources/applet.icns" "%s/Contents/Resources"' % (APPLET_FOLDER, path))
 
 def cap_delete(cap):
     """Deletes a cap entry."""
@@ -526,9 +532,10 @@ def cap_to_str(cap):
 
 DESC_FORMATS = {'doc':'open document %r', 'folder': 'open folder %r', 'app':'launch app %r'}
 
-def cap_desc(cap):
+def cap_desc(cap, max_len=74):
     a = cap[ACTION]
-    return DESC_FORMATS.get(a,'launch %s %%r' % a) % cap[TARGET]
+    desc = DESC_FORMATS.get(a,'launch %s %%r' % a) % cap[TARGET]
+    return clip(desc, max_len)
 
 
 
@@ -539,18 +546,14 @@ def cap_desc(cap):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
-def get_current_link():
+def get_current_link_while_in_console():
     send_key(48, 'command down')
-    #print 'waiting to check front app'
-    time.sleep(0.2)
-    cur_cap = get_current_link0()
-    #time.sleep(1)
+    #time.sleep(0.2)
+    cur_cap = get_current_link()
     send_key(48, 'command down')
-    #print 'checked %r' % cur_cap
-    #cur_cap   = cap_get(cap_find_one('curr.'))
     return cur_cap
 
-def get_current_link0():
+def get_current_link():
     cap = {}
     current_app = get_app_in_focus()
     with open('/tmp/tmp', 'w') as f: f.write('cur app %r ' % current_app)
@@ -583,6 +586,7 @@ def last_commands(n):
     with open(LAUNCH_LOG, 'r') as f:
         return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
 
+
 def write_file(path, contents):
     with open(path,'w') as f:
         f.write(contents)
@@ -590,6 +594,12 @@ def write_file(path, contents):
 def read_file(path):
     with open(path,'r') as f:
         return f.read()
+
+def clear_screen():
+    print '\033[0;0H\033[2J'
+
+def clip(str, l):
+    return str if len(str)<=l else '%s...' % str[:l-3]
 
 
 def arg(num, **kwargs):
@@ -609,16 +619,19 @@ def arg(num, **kwargs):
         return default_value
     error(error_string)
 
+def yes_or_no(str, default=''):
+    suffix = ' [Y/n]? ' if default=='y' else ' [y/N]? '
+    return 'y' == (raw_input(str+suffix) or default).strip()[0:1].lower()
 
 def prompt(prompt, default_value=''):
     dv =  ' (%s)' % default_value if default_value else ''
     val = raw_input(prompt+dv+': ')
     return val or default_value
 
-
 def error(err_str):
     raw_input("\n\nERROR: %s\n\n(press RETURN to exit)" % err_str)
     os._exit(1)
+
 
 
 ########### FROM OBLIB

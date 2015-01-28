@@ -70,16 +70,16 @@ def cmd_launch(argv):
 
 
 def type_app(keys):
-    os.system('open -a "%s"' % keys[TARGET])
+    run('open -a "%s"' % keys[TARGET])
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')
 def type_doc(keys):
-    os.system('open "%s"' % keys[TARGET])
+    run('open "%s"' % keys[TARGET])
 def type_edit(keys):
-    os.system('open -e "%s"' % keys[TARGET])
+    run('open -e "%s"' % keys[TARGET])
 def type_folder(keys):
-    os.system('open "%s"' % keys[TARGET])
+    run('open "%s"' % keys[TARGET])
 def type_none(keys):
     pass
 def type_nstr(keys):
@@ -89,12 +89,11 @@ def type_nstr(keys):
 def type_script(keys, prefix = ''):
     template = {'python':'/usr/bin/env python "%s"', 'sh':'/bin/sh "%s"'}.get(keys.get(TARGET))
     if not template: error("Unknown script interpreter.")
-    os.system(prefix + (template % keys[PATH]))
+    run(prefix + (template % keys[PATH]))
 def type_sh(keys):
-    if 0!=os.system(keys[TARGET]):
-        error('Shell Command Failed.')
+    run(keys[TARGET])
 def type_url(keys):
-    os.system('open "%s"' % keys[TARGET])
+    run('open "%s"' % keys[TARGET])
 
 
 
@@ -108,7 +107,7 @@ def appkeys(file):
     return keys
 
 def error(err_str):
-    raw_input("\nERROR: %s.  (hit return to exit)" % err_str)
+    raw_input("\nERROR: %s  (hit return to exit)" % err_str)
     os.sys.exit(1)
 
 
@@ -123,6 +122,9 @@ def cap_to_str(cap):
     """Returns string summary of a cap's parameters."""
     return 'P:%s  A:%s  T:%s' % (cap['path'], cap['action'], cap['target'])
 
+def run(str):
+    if 0!=os.system(str):
+        error('Command Failed.')
 
 
 # Executes multi-line applescript.  (cannot contain single quote (') character)
