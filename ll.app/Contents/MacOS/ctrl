@@ -17,6 +17,7 @@ import json
 
 
 HOME = os.getenv('HOME')
+EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
@@ -200,7 +201,7 @@ def cmd_edit():
         return
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
     clean_file(path)
-    os.system('open -e "%s"' % path)
+    os.system('%s "%s"' % (EDITOR, path))
     clean_file(path)
 
 def clean_file(path):
