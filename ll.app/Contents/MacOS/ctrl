@@ -10,6 +10,8 @@ import textwrap
 import time
 import json
 
+# cmd_fix
+# current_link should check if file is document or folder and set action
 # todo:  installer, move /ob/cmd, add 'icon' to apps
 # add readme
 
@@ -225,7 +227,7 @@ def cmd_finder(name=None):
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
 def cmd_fix():
-    cmd_set(False)
+    cmd_ss(False)
 
 def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
@@ -317,11 +319,12 @@ def cmd_ss0():
 # BUG what about when there is no last command or curr cap???
 def cmd_ss(ask=True):
     cur_cap   = get_current_link_while_in_console()
-    last_name = last_command_name()
-    last_cap  = last_name and cap_get(cap_find_one(last_name+'.'))
+    name = last_command_name()
+    last_cap  = name and cap_get(cap_find_one(name+'.'))
+    cmd       = 'c' # value used if not 'ask'
     if ask:
         print "SET COMMAND\n"
-        name = prompt('Set command named', last_name)
+        name = prompt('Set command named', name)
         print "Type 'c' or 'p' to assign CURRENT WINDOW, or PREVIOUS COMMAND to '%s'" % name
         print "Or type  'url', 'doc', 'folder' then paste any other target URL or path"
         print
@@ -329,25 +332,26 @@ def cmd_ss(ask=True):
         if last_cap:  print "  Previous: %s" % cap_desc(last_cap)
         print
         cmd = prompt('Set %r as' % name)
-        if cmd == 'p':
-            cap = last_cap
-        elif cmd == 'c':
-            cap = cur_cap
-        elif cmd.strip() == '':
-            return
-        else:
-            cap = {NAME:name}
-            idx = cmd.index(' ')
-            cap[ACTION]=cmd[:idx].strip()
-            cap[TARGET]=cmd[idx:].strip()
-            if cap[ACTION] not in ACTIONS:
-                error("Command link to a known action: %s" % ACTIONS_NAMES)
-        cap[NAME]=name
-        cap_set(cap)
-        clear_screen()
-        print '\nSUCCESS.\n\nCommand "%s" now set to %s\n' % (cap[NAME], cap_desc(cap))
-        if yes_or_no('Launch command now', 'n' if cmd=='c' else 'y'):
-            cmd_execute(cap[NAME])
+    if cmd == 'p':
+        cap = last_cap
+    elif cmd == 'c':
+        cap = cur_cap
+    elif cmd.strip() == '':
+        return
+    else:
+        cap = {NAME:name}
+        idx = cmd.index(' ')
+        cap[ACTION]=cmd[:idx].strip()
+        cap[TARGET]=cmd[idx:].strip()
+        if cap[ACTION] not in ACTIONS:
+            error("Command link to a known action: %s" % ACTIONS_NAMES)
+    cap[NAME]=name
+    cap_set(cap)
+    clear_screen()
+    print '\nSUCCESS.\n\nCommand "%s" now set to %s\n' % (cap[NAME], cap_desc(cap))
+    default = 'n' if cmd=='c' and cap[ACTION] not in ['doc', 'folder'] else 'y'
+    if not ask or yes_or_no('Launch command now', default):
+        cmd_execute(cap[NAME])
 
 def cmd_test():
     send_key(48, 'command down')
