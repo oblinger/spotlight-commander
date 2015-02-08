@@ -21,9 +21,9 @@ EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
-SHORTCUTS = {'b':'browser',  'c':'create', 'cp':'copy',  'e':'edit',
-             'f':'finder',   'ls':'list',  'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
-             'rm':'remove',  'v':'view',
+SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
+             'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
+             'p':'print',    'rm':'remove',  'v':'view',
              'x':'execute',  '?':'usage'}
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
@@ -44,6 +44,7 @@ USAGE = \
         --new           name                Creates a NEW command (with no action)
     nb  --named-browser name
     nf  --named-finder  name
+    p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
     rm  --remove        name                REMOVES command
     v   --view          name
@@ -286,6 +287,17 @@ def cmd_new():
     if len(caps)==0:
         cap_set({NAME:name, ACTION:'none', TARGET:'none'})
         cmd_execute(name)
+
+def cmd_print():
+    """Prints folder associated with the specified command."""
+    prefix = arg(1)
+    cap = cap_get(cap_find_one(prefix))
+    if cap[ACTION] not in ['doc', 'folder', 'app']:
+        error("Command type %r does not have an associated folder." % CAP[ACTION])
+    path = cap[TARGET]
+    if os.path.splitext(path)[1]!='':
+        path = os.path.dirname(path)
+    print path
 
 def cmd_rebuild():
     folder = CMD_DIR
