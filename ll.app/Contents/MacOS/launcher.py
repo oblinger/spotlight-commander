@@ -9,6 +9,8 @@ import traceback
 import json
 
 debug=False
+launcher_keys = None    # This is set to the 'keys' parsed from the launcher
+
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/ll.app/Contents/MacOS'
@@ -19,6 +21,8 @@ PATH = 'path'
 ACTION = 'action'
 TARGET = 'target'
 IO = 'io'
+PROMPT = 'prompt'
+ARG = 'arg'
 
 # chrome  nstr   shell  run   console   script
 
@@ -36,8 +40,10 @@ def main():
 
 
 def cmd_launch(argv):
+    global launcher_keys
     now_in_console = argv[1]=='--now_in_console'
     keys = appkeys(argv[2])
+    launcher_keys = keys
     if (debug or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
         print "Trampoline into console:  %s" % cap_to_str(keys)
         write_file(TRAMPOLINE_FILE, '#!/bin/sh\n%s/launcher.py %s --now_in_console "%s"\n' %
@@ -54,11 +60,19 @@ def cmd_launch(argv):
     with open(LAUNCH_LOG, 'a+') as f:
         f.write(json.dumps(argv[2:]))
         f.write('\n')
+    if keys.get(PROMPT):
+        line = 'from_user'
+        line = user_input(keys[PROMPT])
+        keys[ARG] = line
+        if not line:
+            return                          # EXIT: terminate command w/o user input
 
-    try:   fn=globals()['type_%s' % keys['action']]
+    try:
+        fn=globals()['type_%s' % keys['action']]
     except KeyError:
         error("Unknown action type '%s'" % keys.get('action'))
     try:
+        #user_input(keys[PROMPT])
         fn(keys)
     except Exception, err:
         keys[IO]='pinned'
@@ -68,6 +82,12 @@ def cmd_launch(argv):
         os.sys.stdout.write('\n(press RETURN to exit)')
         raw_input()
 
+
+
+def type_line(keys):
+    line = user_input('foo')
+    print 'testing line input'
+    print 'result %s' % line
 
 def type_app(keys):
     run('open -a "%s"' % keys[TARGET])
@@ -87,11 +107,18 @@ def type_nstr(keys):
     write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
     osa('tell application "Notester" to activate')
 def type_script(keys, prefix = ''):
-    template = {'python':'/usr/bin/env python "%s"', 'sh':'/bin/sh "%s"'}.get(keys.get(TARGET))
+    template = {'python':'/usr/bin/env python "%s" %s', 'sh':'/bin/sh "%s" %s'}.get(keys.get(TARGET))
     if not template: error("Unknown script interpreter.")
-    run(prefix + (template % keys[PATH]))
+    arg = ('"%s"' % keys[ARG]) if ARG in keys else ''
+    run(prefix + (template % (keys[PATH], arg)))
 def type_sh(keys):
-    run(keys[TARGET])
+    line = keys[TARGET]
+    if ARG in keys:
+        if '%' in line:
+            line = line % keys[ARG]                  # if target has a '%' then treat it as a python template
+        else:
+            line = '%s "%s"' % (line, keys[ARG])     # else just append arg to target (inside quotes)
+    run(line)
 def type_url(keys):
     run('open "%s"' % keys[TARGET])
 
@@ -141,6 +168,66 @@ def osa_fn(*lines):
     p = subprocess.Popen(cmd, bufsize=0, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
     return stdout.rstrip()
+
+
+
+### --------
+
+
+from Tkinter import *
+
+
+user_input_result = None
+
+def user_input(prompt):
+    global user_input_result, launcher_keys
+    user_input_result = None
+    if launcher_keys.get('io'):
+        user_input_result = raw_input('%s: ' % prompt)
+    else:
+        title = os.path.splitext(os.path.basename(os.path.dirname(
+            os.path.dirname(os.path.dirname(launcher_keys[PATH])))))[0]
+        one_line_input_gui(field=prompt, title=title)
+        time.sleep(1)
+        #os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
+        osa('tell app "Finder" to set frontmost of process "Python" to true')
+    return user_input_result
+
+def one_line_input_gui(**kwargs):
+    print 'One line input'
+    title = kwargs.get('title', 'Enter Command Arguments')
+    field = kwargs.get('field', 'Input')
+    root = Tk()
+    root.title(title)
+    ents = make_form(root, [field])
+    root.bind('<Return>', (lambda event, e=ents: fetch_and_execute(e, root)))
+    root.mainloop()
+
+def make_form(root, fields):
+    entries = []
+    for field in fields:
+        row = Frame(root)
+        lab = Label(row, text=field, anchor='w')
+        ent = Entry(row)
+        ent.focus()
+        x_but = Button(row, text='X', command=root.quit)
+        x_but.pack(side=RIGHT, padx=0, pady=0)
+        row.pack(side=TOP, fill=X, padx=5, pady=5)
+        lab.pack(side=LEFT)
+        ent.pack(side=LEFT, expand=YES, fill=X)
+        entries.append((field, ent))
+    return entries
+
+
+def fetch_and_execute(entries, root):
+    global user_input_result
+    for entry in entries:
+        field = entry[0]
+        text  = entry[1].get()
+        user_input_result = text
+        print('%s: "%s"' % (field, text))
+    root.quit()
+
 
 
 main()

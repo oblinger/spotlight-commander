@@ -465,6 +465,8 @@ NAME    = 'name'     # REQ  the name of this cap  (it folder name with the .app 
 TYPE    = 'type'     # REQ  'scpt' 'app' 'webloc'
 ACTION  = 'action'   # REQ  'doc' 'folder' 'url'
 TARGET  = 'target'   # REQ
+PROMPT  = 'prompt'   # opt  Causes user input (which updates the 'arg' var)
+ARG     = 'arg'      # opt  Appended as arg for script & shell commands (usually set via 'prompt')
 BODY    = 'body'     # opt  List of text lines after the last key value pair
 IO      = 'io'       # opt  non-null means that command should execute within a console window
 
