@@ -6,6 +6,7 @@
 import re
 import os
 import subprocess
+import traceback
 import textwrap
 import time
 import json
@@ -21,6 +22,7 @@ EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
+KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
@@ -525,6 +527,8 @@ def cap_get(path):
                 print('WARNING: Illegal action %r in %s' % (keys.get(ACTION), keys.get(NAME)))
             return keys
     except:
+        print "WARNING: Failure during reading application command configuaration"
+        print traceback.format_exc()
         return None
     return None
 
