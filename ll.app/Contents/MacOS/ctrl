@@ -236,7 +236,21 @@ def cmd_finder(name=None):
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
 def cmd_fix():
-    cmd_ss(False)
+    cmd_ss(ask=False)
+
+def cmd_fix():
+    send_key('a', 'command down')
+    send_key('x', 'command down')
+    time.sleep(0.1)
+    name = get_clipboard()
+    cmd_set({NAME:name, ACTION:'none', TARGET:None})
+
+def cmd_last():
+    cap = get_current_link()
+    cap[NAME] = last_command_name()
+    cmd_set(cap, verbose=True)
+
+
 
 def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
@@ -260,6 +274,7 @@ def cmd_install(reinstall=True):
     cap_set({NAME:'llv',  ACTION:'command', TARGET:'%s -v'     % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'COPY', ACTION:'command', TARGET:'%s copy'   % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'FIX',  ACTION:'command', TARGET:'%s fix'    % script},                verbose=True)
+    cap_set({NAME:'LAST', ACTION:'command', TARGET:'%s last'   % script},                verbose=True)
     cap_set({NAME:'NEW',  ACTION:'command', TARGET:'%s new'    % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'SET',  ACTION:'command', TARGET:'%s set'    % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'ss',   ACTION:'command', TARGET:'%s ss'     % script, IO: 'console'}, verbose=True)
@@ -374,15 +389,16 @@ def cmd_set(ask=True):
         cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
     cap_set(cap)
 
-def cmd_ss0():
-    cap = get_current_link();  cap[NAME]='curr'
-    cap_set(cap)
-    os.system('%s/ctrl -x ss1' % APPLET_FOLDER)
+#def cmd_ss0():
+#    cap = get_current_link();  cap[NAME]='curr'
+#    cap_set(cap)
+#    os.system('%s/ctrl -x ss1' % APPLET_FOLDER)
 
 
 
 # BUG what about when there is no last command or curr cap???
-def cmd_ss(ask=True):
+def cmd_ss(**kwargs):
+    ask = kwargs.get('ask')
     cur_cap   = get_current_link_while_in_console()
     name = last_command_name()
     last_cap  = name and cap_get(cap_find_one(name+'.'))

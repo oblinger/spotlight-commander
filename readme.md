@@ -4,13 +4,11 @@ document in progress.....
 
 # About
 
-SPOTLIGHTER updates spotlight terms at each retrieval failure point
-in order to rapid converge to a state where all 'places' used by a user
-are loaded correctly loaded based on the first word that occurs to the user.
+SPOTLIGHT COMMANDER help user manage a large set of user-named spotlight commands to open documents, 
+folders, or specific web pages.
 
-
-
-
+By continuously telling spotlight what name the user already has for each item, we allow SPOTLIGHT to remember 
+how a user thinks about all of their stuff, rather than forcing a USER to try to remember where stuff is.
 
 # Basic Usage 
 
