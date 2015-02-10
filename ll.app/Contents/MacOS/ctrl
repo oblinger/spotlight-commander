@@ -51,7 +51,7 @@ USAGE = \
     x   --execute       name                EXECUTES 'name'd command
     ?   --usage                             prints this USAGE message
         --set
-        --scan
+        --scan                              SCANS filesystem looking for named files
         --test
 
  * NOTE: single or double character is a shortcut for the command to its right.
@@ -312,6 +312,51 @@ def cmd_remove():
     cap  =  cap_get(cap_find_one(name))
     print '### Deleting CAP "%s"' % cap[NAME]
     cap_delete(cap)
+
+def cmd_scan():
+    root = '/ob'
+    for f in recursive_file_gen(root):
+        split = os.path.splitext(f)
+        if split[1] in ['.org']:
+            ref = is_named_referent(f)
+            if ref:
+                print "### %20s   %s" % (ref, f)
+            #if not ref and not is_ignorable_referent(f):
+            #    print "### %s  " % (f,)
+
+def is_ignorable_referent(f):
+    nsplit = os.path.splitext(os.path.basename(f))
+    if nsplit[1] not in ['.org', '.md']:
+        return None
+    parent = os.path.basename(os.path.dirname(f))
+    psplit = os.path.splitext(parent)
+
+    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+
+    if nbase in ['readme', 'changelog', 'history']:
+        return True
+    return False
+
+def is_named_referent(f):
+    nsplit = os.path.splitext(os.path.basename(f))
+    if nsplit[1] not in ['.org', '.md']:
+        return None
+    parent = os.path.basename(os.path.dirname(f))
+    psplit = os.path.splitext(parent)
+
+    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+
+    #if pbase in ['docs', 'life', 'flat']:
+    #    return nbase
+    return nbase if nsplit[0][0:1]=='_' or pbase==nbase else None
+
+
+def recursive_file_gen(mydir):
+    for root, dirs, files in os.walk(mydir):
+        for file in files:
+            yield os.path.join(root, file)
 
 def cmd_set(ask=True):
     last_cmd_name = last_command_name()
@@ -745,6 +790,6 @@ def osa_fn(*lines):
     return stdout.rstrip()
 
 
-
+#cmd_scan()
 main()
 
