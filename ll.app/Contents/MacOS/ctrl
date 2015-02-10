@@ -21,12 +21,13 @@ EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
+ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
              'p':'print',    'rm':'remove',  'v':'view',
              'x':'execute',  '?':'usage'}
+ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 
-KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 
 USAGE = \
 """
@@ -59,12 +60,16 @@ USAGE = \
 
   CAP TYPES  (Command APplication Types)
     app          launches 'target' application
-    doc
-    folder
+    command      executed 'target' as a /bin/sh shell command line
+    doc          opens 'target' as a DOCument
+    folder       opens 'target' as a FOLDER
+    none         no action taken
+    python       executes entire 'applet' file as a python script.
+    script       executes entire 'applet' files as a script.
+                 'target' specifies either the 'python' or 'sh' interpreter
+    sh           executes entire 'applet' file using the /bin/sh interpreter
+    url          opens 'target' as a URL using a web browser
     nstr         opens name in notester
-    script       executes applet file itself as a script
-                 'target' specified either 'python' or 'sh' interpter
-    sh           executes 'target' as a sh shell script line
 """
 
 
@@ -239,23 +244,23 @@ def cmd_install(reinstall=True):
     if not os.path.exists(CMD_DIR):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
-    cap_set({NAME:'ll',   ACTION:'sh', TARGET:'%s'     % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llb',  ACTION:'sh', TARGET:'%s -b'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llcp', ACTION:'sh', TARGET:'%s cp'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llc',  ACTION:'sh', TARGET:'%s -c'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'lle',  ACTION:'sh', TARGET:'%s -e'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llf',  ACTION:'sh', TARGET:'%s -f'  % script},                verbose=True)
-    cap_set({NAME:'llls', ACTION:'sh', TARGET:'%s ls'  % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'llmv', ACTION:'sh', TARGET:'%s -e'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llnb', ACTION:'sh', TARGET:'%s -nb' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llnf', ACTION:'sh', TARGET:'%s -nf' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llrm', ACTION:'sh', TARGET:'%s rm'  % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llv',  ACTION:'sh', TARGET:'%s -v'  % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'COPY', ACTION:'sh', TARGET:'%s copy'% script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'FIX',  ACTION:'sh', TARGET:'%s fix' % script},                verbose=True)
-    cap_set({NAME:'NEW',  ACTION:'sh', TARGET:'%s new' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'SET',  ACTION:'sh', TARGET:'%s set' % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'ss',   ACTION:'sh', TARGET:'%s ss'  % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'ll',   ACTION:'command', TARGET:'%s'        % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llb',  ACTION:'command', TARGET:'%s -b'     % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llcp', ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest'}, verbose=True)
+    cap_set({NAME:'llc',  ACTION:'command', TARGET:'%s -c'     % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'lle',  ACTION:'command', TARGET:'%s -e %%s' % script,                 PROMPT: 'Launcher Edit'}, verbose=True)
+    cap_set({NAME:'llf',  ACTION:'command', TARGET:'%s -f'     % script},                verbose=True)
+    cap_set({NAME:'llls', ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'llmv', ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest'}, verbose=True)
+    cap_set({NAME:'llnb', ACTION:'command', TARGET:'%s -nb'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llnf', ACTION:'command', TARGET:'%s -nf'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'llrm', ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name'}, verbose=True)
+    cap_set({NAME:'llv',  ACTION:'command', TARGET:'%s -v'     % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'COPY', ACTION:'command', TARGET:'%s copy'   % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'FIX',  ACTION:'command', TARGET:'%s fix'    % script},                verbose=True)
+    cap_set({NAME:'NEW',  ACTION:'command', TARGET:'%s new'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'SET',  ACTION:'command', TARGET:'%s set'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'ss',   ACTION:'command', TARGET:'%s ss'     % script, IO: 'console'}, verbose=True)
 
 
 def cmd_list():
@@ -470,7 +475,6 @@ ARG     = 'arg'      # opt  Appended as arg for script & shell commands (usually
 BODY    = 'body'     # opt  List of text lines after the last key value pair
 IO      = 'io'       # opt  non-null means that command should execute within a console window
 
-ACTIONS = ['app', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 
 
 def cap_get(path):
@@ -560,8 +564,9 @@ def cap_set(cap, **kwargs):
         os.makedirs('%s/Contents/MacOS' % path)
     write_file('%s/Contents/PkgInfo' % path, 'APPLaplt')
     write_file('%s/Contents/Info.plist' % path, INFO_PLIST_BODY)
-    excludes   = ['body', 'type', 'folder', 'name', 'action', 'target', 'docstr', 'source', 'path']
+    excludes   = ['prompt', 'action', 'target', 'type', 'path', 'body', 'folder', 'name'] # 'docstr', 'source'
     fixed_keys = '# action: %s\n# target: %s' % (cap['action'], cap['target'])
+    if 'prompt' in cap: fixed_keys = '# prompt: %s\n%s' % (cap['prompt'], fixed_keys)
     other_keys = '\n'.join(['# %s: %s' % (k, v) for k,v in cap.items() if k not in excludes])
     contents = '%s\n%s\n%s\n' % (PYTHON_LAUNCHER_PREFIX, fixed_keys, other_keys)
     if BODY in cap:  contents = '%s%s\n' % (contents, '\n'.join(cap[BODY]))

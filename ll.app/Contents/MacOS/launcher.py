@@ -4,6 +4,7 @@
 # MODULE:  
 
 import os
+import time
 import re
 import traceback
 import json
@@ -79,15 +80,8 @@ def cmd_launch(argv):
         print traceback.format_exc()
         #print sys.exc_info()[0]
     if keys.get(IO)=='pinned' or debug:
-        os.sys.stdout.write('\n(press RETURN to exit)')
-        raw_input()
+        raw_input('\n(press RETURN to exit)')
 
-
-
-def type_line(keys):
-    line = user_input('foo')
-    print 'testing line input'
-    print 'result %s' % line
 
 def type_app(keys):
     run('open -a "%s"' % keys[TARGET])
@@ -106,12 +100,17 @@ def type_nstr(keys):
     osa('tell application "growl" to activate')
     write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
     osa('tell application "Notester" to activate')
-def type_script(keys, prefix = ''):
-    template = {'python':'/usr/bin/env python "%s" %s', 'sh':'/bin/sh "%s" %s'}.get(keys.get(TARGET))
-    if not template: error("Unknown script interpreter.")
+def type_python(keys):
+    return type_script(keys, 'python')
+def type_script(keys, target=None):
+    template = {'python':'/usr/bin/env python "%s" %s', 'sh':'/bin/bash "%s" %s'}.get(target or keys.get(TARGET))
+    if not template:
+        error("Unknown script interpreter.")
     arg = ('"%s"' % keys[ARG]) if ARG in keys else ''
-    run(prefix + (template % (keys[PATH], arg)))
+    run(template % (keys[PATH], arg))
 def type_sh(keys):
+    return type_script(keys, 'sh')
+def type_command(keys):
     line = keys[TARGET]
     if ARG in keys:
         if '%' in line:
@@ -183,18 +182,17 @@ def user_input(prompt):
     global user_input_result, launcher_keys
     user_input_result = None
     if launcher_keys.get('io'):
-        user_input_result = raw_input('%s: ' % prompt)
+        user_input_result = raw_input('%s ' % prompt)
     else:
         title = os.path.splitext(os.path.basename(os.path.dirname(
             os.path.dirname(os.path.dirname(launcher_keys[PATH])))))[0]
         one_line_input_gui(field=prompt, title=title)
-        time.sleep(1)
+        #time.sleep(0.1)
         #os.system('''/usr/bin/osascript -e 'tell app "Finder" to set frontmost of process "Python" to true' ''')
-        osa('tell app "Finder" to set frontmost of process "Python" to true')
+        #osa('tell app "Finder" to set frontmost of process "Python" to true')
     return user_input_result
 
 def one_line_input_gui(**kwargs):
-    print 'One line input'
     title = kwargs.get('title', 'Enter Command Arguments')
     field = kwargs.get('field', 'Input')
     root = Tk()
@@ -225,7 +223,7 @@ def fetch_and_execute(entries, root):
         field = entry[0]
         text  = entry[1].get()
         user_input_result = text
-        print('%s: "%s"' % (field, text))
+    root.destroy()
     root.quit()
 
 
