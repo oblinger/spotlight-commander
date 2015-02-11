@@ -398,7 +398,7 @@ def cmd_set(ask=True):
 
 # BUG what about when there is no last command or curr cap???
 def cmd_ss(**kwargs):
-    ask = kwargs.get('ask')
+    ask = kwargs.get('ask', True)
     cur_cap   = get_current_link_while_in_console()
     name = last_command_name()
     last_cap  = name and cap_get(cap_find_one(name+'.'))
