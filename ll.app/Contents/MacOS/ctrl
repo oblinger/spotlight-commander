@@ -20,9 +20,11 @@ import json
 HOME = os.getenv('HOME')
 EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
+PARAMS_FILE = '%s/.ll_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
+WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
@@ -239,16 +241,40 @@ def cmd_fix():
     cmd_ss(ask=False)
 
 def cmd_fix():
-    send_key('a', 'command down')
-    send_key('x', 'command down')
-    time.sleep(0.1)
+    #send_keys('a', 'command down')
+    #time.sleep(1.0)
+    #send_keys('x', 'command down')
+    #time.sleep(2.0)
     name = get_clipboard()
-    cmd_set({NAME:name, ACTION:'none', TARGET:None})
+    if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
+        params(fix_command=name, time=int(time.time()))
+    else:
+        last_command_append({'error':'bad command', 'thename':name})
+
+params_cache = None
+def params(**updates):
+    global params_cache
+    if not params_cache:
+        try:
+            with open(PARAMS_FILE, 'r') as f:
+                params_cache = json.loads(f.read())
+        except:
+            params_cache = {}
+    if updates:
+        params_cache.update(updates)
+        with open(PARAMS_FILE, 'w') as out:
+            out.write(json.dumps(params_cache)+'\n')
+    return params_cache
+
 
 def cmd_last():
     cap = get_current_link()
-    cap[NAME] = last_command_name()
-    cmd_set(cap, verbose=True)
+    p   = params()
+    cap[NAME] = name = p.get('fix_command')
+    print "params %r" % p
+    if name and time.time()-p['time']<60:
+        cap_set(cap, verbose=True)
+        cmd_execute(name)
 
 
 
