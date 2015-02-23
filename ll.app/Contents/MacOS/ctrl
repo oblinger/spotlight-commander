@@ -219,11 +219,9 @@ def cmd_edit():
     if not prefix:
         return
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
-    clean_file(path)
+    #clean_file(path)
     os.system('%s "%s"' % (EDITOR, path))
-    clean_file(path)
-
-
+    #clean_file(path)
 def clean_file(path):
     original = read_file(path)
     contents = original.replace('\xe2', "'")
@@ -233,7 +231,6 @@ def clean_file(path):
     contents = contents.encode('ascii', 'ignore')
     if original!=contents:
         write_file(path, contents)
-
 # def clean_file(path):
 #     os.system('iconv -f iso-8859-1 -t utf-8 < "%s" > "%s.txt"' % (path, path))
 

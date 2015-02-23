@@ -146,7 +146,8 @@ def write_file(path, contents):
 
 def cap_to_str(cap):
     """Returns string summary of a cap's parameters."""
-    return 'P:%s  A:%s  T:%s' % (cap['path'], cap['action'], cap.get('target'))
+    return 'P:%s  A:%s  T:%s' % (cap['path'], cap['action'], cap.get('target')
+    )
 
 def run(str):
     if 0!=os.system(str):
