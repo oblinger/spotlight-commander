@@ -25,6 +25,7 @@ LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 PARAMS_FILE = '%s/.ll_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
+EDITOR = '_edit'
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
@@ -232,6 +233,9 @@ def clean_file(path):
     contents = contents.encode('ascii', 'ignore')
     if original!=contents:
         write_file(path, contents)
+
+# def clean_file(path):
+#     os.system('iconv -f iso-8859-1 -t utf-8 < "%s" > "%s.txt"' % (path, path))
 
 
 def cmd_finder(name=None):
