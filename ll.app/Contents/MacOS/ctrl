@@ -16,11 +16,7 @@ import json
 # cmd_fix
 # current_link should check if file is document or folder and set action
 # do this:   installer, move /ob/cmd, add 'icon' to apps
-# add readme
 
-# LOW PRIORITY
-# --rm will fail if ../
-# MacOS/applet is missing
 
 CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
 RESCAN_ROOT = '/ob'
@@ -269,7 +265,6 @@ def cmd_last():
         cmd_execute(name)
 
 
-
 def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
         return
@@ -358,9 +353,9 @@ def cmd_rebuild():
 
 def cmd_remove():
     name =  arg(1, prompt='Enter name of command to remove')
-    cap  =  cap_get_by_name(name)
-    print '### Deleting CAP "%s"' % cap[NAME]
-    cap_delete(cap)
+    path  =  cap_find_one(name, require_valid_cap=False)
+    print '### Deleting CAP "%s"' % path
+    os.system('rm -r "%s"' % path)
 
 
 def cmd_rescan(root=RESCAN_ROOT):
@@ -877,14 +872,5 @@ def osa_fn(*lines):
     return stdout.rstrip()
 
 
-#cmd_scan()
+
 main()
-
-
-
-
-#
-# def scan_rebuild_cap(keys):
-#     if keys[TYPE]=='webloc':
-#         pass
-#         cap_set(keys)
