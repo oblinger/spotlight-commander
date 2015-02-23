@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # AUTHOR:  Dan Oblinger  <code@oblinger.us>
 # CREATE:  2015-01-10
-# MODULE:  
+# MODULE:
+
+
 
 import re
 import os
@@ -13,15 +15,20 @@ import json
 
 # cmd_fix
 # current_link should check if file is document or folder and set action
-# todo:  installer, move /ob/cmd, add 'icon' to apps
+# do this:   installer, move /ob/cmd, add 'icon' to apps
 # add readme
 
+# LOW PRIORITY
+# --rm will fail if ../
+# MacOS/applet is missing
 
+CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
+RESCAN_ROOT = '/ob'
 HOME = os.getenv('HOME')
-EDITOR = os.getenv('EDITOR', 'open -e')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 PARAMS_FILE = '%s/.ll_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
+EDITOR = os.getenv('EDITOR', 'open -e')
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
@@ -52,6 +59,7 @@ USAGE = \
     p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
     rm  --remove        name                REMOVES command
+        --rescan                            scans ALL FOLDERS looking for targets for missing commands
         --verify                            scans all commands and VERIFIES their targets are valid
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
@@ -149,6 +157,7 @@ def main():
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
+    #argv = ['','--rescan']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
@@ -184,8 +193,7 @@ def cmd_browser(name=None):
 def cmd_copy():
     name    = arg(1, prompt='Enter name of command to copy')
     newname = arg(2, prompt='Enter new destination name for copy')
-    path = cap_find_one(name)
-    cap  = cap_get(path)
+    cap  = cap_get_by_name(name)
     print '### Copying %r to %r' % (name, newname)
     cap[NAME] = newname
     cap_set(cap)
@@ -202,7 +210,7 @@ def cmd_create():
 
 def cmd_debug():
     prefix = arg(1, prompt='Enter name to edit')
-    path = cap_path( cap_get( cap_find_one(prefix) ) )
+    path = cap_path( cap_get_by_name(prefix) )
     print("### Debugging execution of CAP command %r" % path)
     os.system('/usr/bin/env python %s/launcher.py --debug --launch %s/Contents/MacOS/applet' % (APPLET_FOLDER, path))
 
@@ -299,8 +307,7 @@ def cmd_list():
 def cmd_move():
     name    = arg(1, prompt='Enter name of command to move')
     newname = arg(2, prompt='Enter new destination name for move')
-    path = cap_find_one(name)
-    cap  = cap_get(path)
+    cap  = cap_get_by_name(name)
     print '### Moving %r to %r' % (name, newname)
     cap_delete(cap)
     cap[NAME] = newname
@@ -328,7 +335,7 @@ def cmd_new():
 def cmd_print():
     """Prints folder associated with the specified command."""
     prefix = arg(1)
-    cap = cap_get(cap_find_one(prefix))
+    cap = cap_get_by_name(prefix)
     if cap[ACTION] not in ['doc', 'folder', 'app']:
         error("Command type %r does not have an associated folder." % CAP[ACTION])
     path = cap[TARGET]
@@ -339,35 +346,41 @@ def cmd_print():
 
 def cmd_rebuild():
     folder = CMD_DIR
-    if 'y'!=prompt('press "y" to overwrite CAPs under %s' % folder):
+    a1 = arg(1, default_value=None)
+    suffix = ' starting with %r' % a1 if a1 else ''
+    if 'y'!=prompt('press "y" to REBUILD each CAPs under %s%s' % (folder, suffix)):
         return
     for cap in cap_get_all(folder):
-        #print "Rebuilding %r" % cap[NAME]
-        cap_set(cap)
+        if not a1 or cap[NAME].lower().startswith(a1.lower()):
+            cap_delete(cap)  # ensures that command's case is not derived from the old cap.app
+            cap_set(cap)
 
 
 def cmd_remove():
     name =  arg(1, prompt='Enter name of command to remove')
-    cap  =  cap_get(cap_find_one(name))
+    cap  =  cap_get_by_name(name)
     print '### Deleting CAP "%s"' % cap[NAME]
     cap_delete(cap)
 
-def cmd_scan():
-    root = '/ob'
+
+def cmd_rescan(root=RESCAN_ROOT):
+    print "### SCANNING FOLDERS UNDER %r FOR TARGETS FOR NEW COMMANDS" % root
     for f in recursive_file_gen(root):
-        split = os.path.splitext(f)
-        if split[1] in ['.org']:
-            #ref = is_named_referent(f)
-            #if ref:
-            #    print "### %20s   %s" % (ref, f)
-            #if not ref and not is_ignorable_referent(f):
-            #    print "### %s  " % (f,)
+        name,jtarget = get_named_referent(f)
+        if name:
+            cap  = cap_get_by_name(name, default=None)
+            if not cap or cap[TARGET]!=f:
+                print '### New FILE   link: %r to %r' % (name, f)
+                cap_set({NAME:name, ACTION:'doc', TARGET:f})
+            if jtarget and CREATE_JREFS:
+                jname = 'j%s' % name
+                jcap = cap_get_by_name(jname, default=None)
+                if not jcap or jcap[TARGET]!=jtarget:
+                    print '### New FOLDER link: %r to %r' % (jname, jtarget)
+                    cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
 
 
-def recursive_file_gen(mydir):
-    for root, dirs, files in os.walk(mydir):
-        for file in files:
-            yield os.path.join(root, file)
+
 
 def cmd_set(ask=True):
     last_cmd_name = last_command_name()
@@ -378,12 +391,13 @@ def cmd_set(ask=True):
         cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
     cap_set(cap)
 
+
 # BUG what about when there is no last command or curr cap???
 def cmd_ss(**kwargs):
     ask = kwargs.get('ask', True)
     cur_cap   = get_current_link_while_in_console()
     name = last_command_name()
-    last_cap  = name and cap_get(cap_find_one(name+'.'))
+    last_cap  = name and cap_get_by_name(name+'.')
     cmd       = 'c' # value used if not 'ask'
     if ask:
         print "SET COMMAND\n"
@@ -416,9 +430,9 @@ def cmd_ss(**kwargs):
     if not ask or yes_or_no('Launch command now', default):
         cmd_execute(cap[NAME])
 
+
 def cmd_test():
     send_key(48, 'command down')
-
 
 
 def cmd_test_scan(folder=CMD_DIR+'/old'):
@@ -432,10 +446,7 @@ def cmd_test_scan(folder=CMD_DIR+'/old'):
         #if keys:  cap_set(keys)
         #if keys:  scan_rebuild_cap(keys)
         #scan_process_file(keys)
-def scan_rebuild_cap(keys):
-    if keys[TYPE]=='webloc':
-        pass
-        cap_set(keys)
+
 
 def cmd_usage():
     print USAGE
@@ -444,19 +455,25 @@ def cmd_usage():
 
 
 def cmd_verify():
+    out = '/tmp/removal_script'
     folder = CMD_DIR
-
-        return
-    for cap in cap_get_all(folder):
-        #print "Rebuilding %r" % cap[NAME]
-        cap_set(cap)
+    with open(out, 'w') as f:
+        for cap in cap_get_all(folder):
+            if cap[ACTION] in ['app', 'doc', 'folder']:
+                if not os.path.exists(cap[TARGET]):
+                    f.write('ll --rm "%s"\n' % cap[NAME])
+                    print "### ERROR in %r.  Target missing: %s" % (cap[NAME], cap[TARGET])
+    print '\nNOTE:  See %r for script file to remove all commands with missing targets' % out
 
 
 def cmd_view():
     last = last_command_name()
     name = arg(1, prompt='Enter name of command to view', default=last)
-    cap = cap_get( cap_find_one(name) )
-    print 'COMMAND %s' % cap_to_str(cap)
+    for cap_file in cap_find_all(name):
+        cap = cap_get(cap_file)
+        if cap:
+            print 'COMMAND %s' % cap_to_str(cap)
+
 
 def cmd_execute(name=None):
     name = name or arg(1, prompt='Enter name of command to execute')
@@ -466,11 +483,6 @@ def cmd_execute(name=None):
 
 
 ################################################################################
-###   SUPPORT FUNCTIONS
-
-
-
-##########################
 ###  CAP OPERATORS
 ###
 ###
@@ -540,11 +552,21 @@ def cap_get(path):
         return None
     return None
 
-def cap_find_one(prefix, folder=CMD_DIR):
-    paths = cap_find_all(prefix, folder)
+def cap_get_by_name(prefix, **kwargs):
+    """Like cap_get but uses 'prefix' to find cap file.  see 'cap_find_one' for kwargs."""
+    cap_file = cap_find_one(prefix, **kwargs)
+    return cap_get(cap_file) if cap_file else None
+
+def cap_find_one(prefix, **kwargs):
+    folder=kwargs.get('folder', CMD_DIR)
+    require_valid_cap=kwargs.get('require_valid_cap', True)
+    default = kwargs.get('default')
+    paths = cap_find_all(prefix, folder, require_valid_cap)
     if len(paths)>1:
-        paths2 = cap_find_all(prefix+'.')   # try looking for a case insensitive exact match
+        paths2 = cap_find_all(prefix+'.', folder, require_valid_cap)   # try looking for a case insensitive exact match
         if len(paths2)==1: paths = paths2
+    if len(paths)!=1 and 'default' in kwargs:
+        return default
     if len(paths)==0:
         error('Command App starting with "%s..." not found under %s' % (prefix, folder))
     if len(paths)>1:
@@ -552,7 +574,7 @@ def cap_find_one(prefix, folder=CMD_DIR):
               (prefix, ', '.join(['/%s/' % os.path.basename(p) for p in paths])))
     return paths[0]
 
-def cap_find_all(prefix, folder=CMD_DIR):
+def cap_find_all(prefix, folder=CMD_DIR, require_valid_cap=True):
     """Returns list of paths to matching cap files.
     if 'only_one' then only one cap path is returned, and an error is generated
     if more or fewer than one cap is found."""
@@ -560,7 +582,7 @@ def cap_find_all(prefix, folder=CMD_DIR):
     paths = []
     for name in os.listdir(folder):
         path = '%s/%s' % (folder, name)
-        if name.lower().startswith(prefix) and cap_get(path):
+        if name.lower().startswith(prefix) and (not require_valid_cap or cap_get(path)):
             paths.append(path)
     return paths
 
@@ -627,6 +649,29 @@ def cap_desc(cap, max_len=74):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
+def get_named_referent(f):
+    """Returns referent name of f if it is a standard referent file.
+    If the referent is also a FOLDER referent, then the path to that folder is also returned as a second arg """
+    nsplit = os.path.splitext(os.path.basename(f))
+    if nsplit[1] not in ['.org', '.md']:
+        return None, None
+    parent_path = os.path.dirname(f)
+    parent = os.path.basename(parent_path)
+    psplit = os.path.splitext(parent)
+
+    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+
+    if nbase in ['readme', 'changelog', 'history']:
+        return None, None                               # Ignore these files
+    elif pbase==nbase:
+        return nbase, parent_path                       # Return folder reference
+    elif nsplit[0][0:1]=='_':
+        return nbase, None                              # Return file reference
+    else:
+        return None, None                               # Return no reference at all
+
+
 params_cache = None
 def params(**updates):
     """Get/Set persistent parameters.  Accepts updates, returns current map of params"""
@@ -685,6 +730,12 @@ def last_commands(n):
         return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
 
 
+def recursive_file_gen(mydir):
+    """Generator for all files recursively under 'mydir'"""
+    for root, dirs, files in os.walk(mydir):
+        for file in files:
+            yield os.path.join(root, file)
+
 def write_file(path, contents):
     with open(path,'w') as f:
         f.write(contents)
@@ -713,7 +764,7 @@ def arg(num, **kwargs):
         value = raw_input(prompt+': ')
         if value.strip() != '':
             return value
-    if 'default' in kwargs:
+    if 'default_value' in kwargs:
         return default_value
     error(error_string)
 
@@ -809,7 +860,7 @@ def get_app_in_focus():
 'do shell script "echo " & quoted form of frontAppName')
 #'return< {frontAppName, windowTitle}')
 
-  
+
 # Executes multi-line applescript.  (cannot contain single quote (') character)
 def osa(*lines):
     """Executes multi-line applescript script"""
@@ -833,30 +884,7 @@ main()
 
 
 #
-# def is_ignorable_referent(f):
-#     nsplit = os.path.splitext(os.path.basename(f))
-#     if nsplit[1] not in ['.org', '.md']:
-#         return None
-#     parent = os.path.basename(os.path.dirname(f))
-#     psplit = os.path.splitext(parent)
-#
-#     pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-#     nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-#
-#     if nbase in ['readme', 'changelog', 'history']:
-#         return True
-#     return False
-#
-# def is_named_referent(f):
-#     nsplit = os.path.splitext(os.path.basename(f))
-#     if nsplit[1] not in ['.org', '.md']:
-#         return None
-#     parent = os.path.basename(os.path.dirname(f))
-#     psplit = os.path.splitext(parent)
-#
-#     pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-#     nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-#
-#     #if pbase in ['docs', 'life', 'flat']:
-#     #    return nbase
-#     return nbase if nsplit[0][0:1]=='_' or pbase==nbase else None
+# def scan_rebuild_cap(keys):
+#     if keys[TYPE]=='webloc':
+#         pass
+#         cap_set(keys)
