@@ -52,6 +52,7 @@ USAGE = \
     p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
     rm  --remove        name                REMOVES command
+        --verify                            scans all commands and VERIFIES their targets are valid
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
     ?   --usage                             prints this USAGE message
@@ -179,6 +180,7 @@ def cmd_browser(name=None):
     url = get_chrome_url()
     cap_set({NAME:name, ACTION:'url', TARGET:url})
 
+
 def cmd_copy():
     name    = arg(1, prompt='Enter name of command to copy')
     newname = arg(2, prompt='Enter new destination name for copy')
@@ -188,6 +190,7 @@ def cmd_copy():
     cap[NAME] = newname
     cap_set(cap)
 
+
 def cmd_create():
     """Creates a new cmd app"""
     name   = arg(1, prompt='Name of cap to create', error_string='Name required.')
@@ -195,6 +198,7 @@ def cmd_create():
     target = arg(3, prompt='Cap target', error_string='Target required')
     keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
     cap_set(keys)
+
 
 def cmd_debug():
     prefix = arg(1, prompt='Enter name to edit')
@@ -213,6 +217,7 @@ def cmd_edit():
     clean_file(path)
     os.system('%s "%s"' % (EDITOR, path))
     clean_file(path)
+
 
 def clean_file(path):
     original = read_file(path)
@@ -237,34 +242,13 @@ def cmd_finder(name=None):
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-def cmd_fix():
-    cmd_ss(ask=False)
 
 def cmd_fix():
-    #send_keys('a', 'command down')
-    #time.sleep(1.0)
-    #send_keys('x', 'command down')
-    #time.sleep(2.0)
     name = get_clipboard()
     if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
         params(fix_command=name, time=int(time.time()))
     else:
         last_command_append({'error':'bad command', 'thename':name})
-
-params_cache = None
-def params(**updates):
-    global params_cache
-    if not params_cache:
-        try:
-            with open(PARAMS_FILE, 'r') as f:
-                params_cache = json.loads(f.read())
-        except:
-            params_cache = {}
-    if updates:
-        params_cache.update(updates)
-        with open(PARAMS_FILE, 'w') as out:
-            out.write(json.dumps(params_cache)+'\n')
-    return params_cache
 
 
 def cmd_last():
@@ -311,6 +295,7 @@ def cmd_list():
     names = [cap_get(path)[NAME].ljust(18) for path in cap_find_all(prefix)]
     print 'COMMANDS:\n%s\n\n' % textwrap.fill('  '.join(names),80)
 
+
 def cmd_move():
     name    = arg(1, prompt='Enter name of command to move')
     newname = arg(2, prompt='Enter new destination name for move')
@@ -321,13 +306,16 @@ def cmd_move():
     cap[NAME] = newname
     cap_set(cap)
 
+
 def cmd_named_browser():
     """Prompts user for name for link to URL in the top Chrome tab"""
     cmd_browser(prompt('Enter name for link to current Chrome URL'))
 
+
 def cmd_named_finder():
     """Prompts user for name for link to document selected in finder"""
     cmd_finder(prompt('Enter name for link to file selected & clipboarded in Finder'))
+
 
 def cmd_new():
     name = arg(1, prompt='Enter name of new (empty) command.')
@@ -335,6 +323,7 @@ def cmd_new():
     if len(caps)==0:
         cap_set({NAME:name, ACTION:'none', TARGET:'none'})
         cmd_execute(name)
+
 
 def cmd_print():
     """Prints folder associated with the specified command."""
@@ -347,13 +336,15 @@ def cmd_print():
         path = os.path.dirname(path)
     print path
 
+
 def cmd_rebuild():
     folder = CMD_DIR
-    if 'y'!=prompt('press "y" to delete and rebuild all CAPs under %s' % folder):
+    if 'y'!=prompt('press "y" to overwrite CAPs under %s' % folder):
         return
     for cap in cap_get_all(folder):
-        print "Rebuilding %r" % cap[NAME]
+        #print "Rebuilding %r" % cap[NAME]
         cap_set(cap)
+
 
 def cmd_remove():
     name =  arg(1, prompt='Enter name of command to remove')
@@ -366,39 +357,11 @@ def cmd_scan():
     for f in recursive_file_gen(root):
         split = os.path.splitext(f)
         if split[1] in ['.org']:
-            ref = is_named_referent(f)
-            if ref:
-                print "### %20s   %s" % (ref, f)
+            #ref = is_named_referent(f)
+            #if ref:
+            #    print "### %20s   %s" % (ref, f)
             #if not ref and not is_ignorable_referent(f):
             #    print "### %s  " % (f,)
-
-def is_ignorable_referent(f):
-    nsplit = os.path.splitext(os.path.basename(f))
-    if nsplit[1] not in ['.org', '.md']:
-        return None
-    parent = os.path.basename(os.path.dirname(f))
-    psplit = os.path.splitext(parent)
-
-    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-
-    if nbase in ['readme', 'changelog', 'history']:
-        return True
-    return False
-
-def is_named_referent(f):
-    nsplit = os.path.splitext(os.path.basename(f))
-    if nsplit[1] not in ['.org', '.md']:
-        return None
-    parent = os.path.basename(os.path.dirname(f))
-    psplit = os.path.splitext(parent)
-
-    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-
-    #if pbase in ['docs', 'life', 'flat']:
-    #    return nbase
-    return nbase if nsplit[0][0:1]=='_' or pbase==nbase else None
 
 
 def recursive_file_gen(mydir):
@@ -414,13 +377,6 @@ def cmd_set(ask=True):
         cap[ACTION] = prompt('Command action', cap.get(ACTION, ''))
         cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
     cap_set(cap)
-
-#def cmd_ss0():
-#    cap = get_current_link();  cap[NAME]='curr'
-#    cap_set(cap)
-#    os.system('%s/ctrl -x ss1' % APPLET_FOLDER)
-
-
 
 # BUG what about when there is no last command or curr cap???
 def cmd_ss(**kwargs):
@@ -485,6 +441,16 @@ def cmd_usage():
     print USAGE
     os.sys.stdout.write('HIT RETURN TO EXIT')
     raw_input()
+
+
+def cmd_verify():
+    folder = CMD_DIR
+
+        return
+    for cap in cap_get_all(folder):
+        #print "Rebuilding %r" % cap[NAME]
+        cap_set(cap)
+
 
 def cmd_view():
     last = last_command_name()
@@ -611,7 +577,7 @@ def cap_set(cap, **kwargs):
     write_file('%s/Contents/PkgInfo' % path, 'APPLaplt')
     write_file('%s/Contents/Info.plist' % path, INFO_PLIST_BODY)
     excludes   = ['prompt', 'action', 'target', 'type', 'path', 'body', 'folder', 'name'] # 'docstr', 'source'
-    fixed_keys = '# action: %s\n# target: %s' % (cap['action'], cap['target'])
+    fixed_keys = '# action: %s\n# target: %s' % (cap['action'], cap.get('target'))
     if 'prompt' in cap: fixed_keys = '# prompt: %s\n%s' % (cap['prompt'], fixed_keys)
     other_keys = '\n'.join(['# %s: %s' % (k, v) for k,v in cap.items() if k not in excludes])
     contents = '%s\n%s\n%s\n' % (PYTHON_LAUNCHER_PREFIX, fixed_keys, other_keys)
@@ -660,6 +626,23 @@ def cap_desc(cap, max_len=74):
 
 ###############################################################################
 ###   SUPPORT FUNCTIONS
+
+params_cache = None
+def params(**updates):
+    """Get/Set persistent parameters.  Accepts updates, returns current map of params"""
+    global params_cache
+    if not params_cache:
+        try:
+            with open(PARAMS_FILE, 'r') as f:
+                params_cache = json.loads(f.read())
+        except:
+            params_cache = {}
+    if updates:
+        params_cache.update(updates)
+        with open(PARAMS_FILE, 'w') as out:
+            out.write(json.dumps(params_cache)+'\n')
+    return params_cache
+
 
 def get_current_link_while_in_console():
     send_key(48, 'command down')
@@ -846,3 +829,34 @@ def osa_fn(*lines):
 #cmd_scan()
 main()
 
+
+
+
+#
+# def is_ignorable_referent(f):
+#     nsplit = os.path.splitext(os.path.basename(f))
+#     if nsplit[1] not in ['.org', '.md']:
+#         return None
+#     parent = os.path.basename(os.path.dirname(f))
+#     psplit = os.path.splitext(parent)
+#
+#     pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+#     nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+#
+#     if nbase in ['readme', 'changelog', 'history']:
+#         return True
+#     return False
+#
+# def is_named_referent(f):
+#     nsplit = os.path.splitext(os.path.basename(f))
+#     if nsplit[1] not in ['.org', '.md']:
+#         return None
+#     parent = os.path.basename(os.path.dirname(f))
+#     psplit = os.path.splitext(parent)
+#
+#     pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+#     nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+#
+#     #if pbase in ['docs', 'life', 'flat']:
+#     #    return nbase
+#     return nbase if nsplit[0][0:1]=='_' or pbase==nbase else None
