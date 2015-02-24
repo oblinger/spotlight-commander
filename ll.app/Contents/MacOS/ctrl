@@ -25,7 +25,7 @@ LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 PARAMS_FILE = '%s/.ll_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
-EDITOR = '_edit'     # todo: FIX THIS
+EDITOR = 'sub'     # todo: FIX THIS
 APPLET_FOLDER = '/Applications/ll.app/Contents/MacOS'
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
@@ -154,7 +154,7 @@ def main():
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
-    #argv = ['','--rescan']
+    #argv = ['','--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
@@ -368,12 +368,12 @@ def cmd_rescan(root=RESCAN_ROOT):
             if not cap or cap[TARGET]!=f:
                 print '### New FILE   link: %r to %r' % (name, f)
                 cap_set({NAME:name, ACTION:'doc', TARGET:f})
-            if jtarget and CREATE_JREFS:
-                jname = 'j%s' % name
-                jcap = cap_get_by_name(jname, default=None)
-                if not jcap or jcap[TARGET]!=jtarget:
-                    print '### New FOLDER link: %r to %r' % (jname, jtarget)
-                    cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
+            # if jtarget and False: ################################################
+            #     jname = 'j%s' % name
+            #     jcap = cap_get_by_name(jname, default=None)
+            #     if not jcap or jcap[TARGET]!=jtarget:
+            #         print '### New FOLDER link: %r to %r' % (jname, jtarget)
+            #         cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
 
 
 
@@ -605,6 +605,18 @@ def cap_set(cap, **kwargs):
     os.system('chmod 755 "%s"' % app_path)
     os.system('mkdir "%s/Contents/Resources"' % path)
     os.system('cp "%s/../Resources/applet.icns" "%s/Contents/Resources"' % (APPLET_FOLDER, path))
+    cap_set_jcap(cap, verbose)
+
+def cap_set_jcap(cap, verbose):
+    """adds the shadow 'j...' command each time the main command is updated."""
+    if cap[ACTION] != 'doc' or not CREATE_JREFS:
+        return
+    name,jtarget = get_named_referent(cap[TARGET])
+    if jtarget:
+        jname = 'j%s' % name.lower()
+        if verbose:
+            print '### FOLDER link: %r to %r' % (jname, jtarget)
+            cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
 
 def cap_delete(cap):
     """Deletes a cap entry."""
