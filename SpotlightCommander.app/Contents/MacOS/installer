@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+
+from __future__ import print_function
+import logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+logger = logging.getLogger()
+logger.addHandler(logging.FileHandler('/ob/stdout.txt', 'a'))
+print = logger.info
+print('STD OUT LOGGING ON')
+
+
+
+
+
+import os
+
+INSTALLATION_FOLDER = '/Applications'
+CTRL_SCRIPT         = 'Contents/MacOS/ctrl'
+
+def installer_bootstrap():
+    print('d')
+    dir_up = os.path.dirname
+    src_root = dir_up(dir_up(dir_up(os.path.abspath(__file__))))
+    dest_root = '%s/%s' % (INSTALLATION_FOLDER, os.path.basename(src_root))
+
+    print("BOOTSTRAP INSTALLER:")
+    raw_input('Install SpotlightCommander in %r' % INSTALLATION_FOLDER)
+    print("- Copying tree from %r to %r" % (src_root, INSTALLATION_FOLDER))
+    os.system('cp -r "%s" "%s"' % (src_root, INSTALLATION_FOLDER))
+
+    print("BOOTSTRAP INSTALLER:  Invoking SpotlightCommander --install")
+    os.system('%s/%s --install' % (dest_root, CTRL_SCRIPT))
+
+print('wtf')
+installer_bootstrap()
+
+
+
+
+
