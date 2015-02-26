@@ -24,8 +24,8 @@ import json
 CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 HOME = os.getenv('HOME')
-LAUNCH_LOG = '%s/.ll_launchlog' % HOME
-PARAMS_FILE = '%s/.ll_params' % HOME
+LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
+PARAMS_FILE = '%s/.spot_cmdr_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
 EDITOR = 'sub'     # todo: FIX THIS
