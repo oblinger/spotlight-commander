@@ -32,13 +32,14 @@ To achieve this we must not put spotlight things into OUR HEADS, instead we must
     EACH TIME you go to one of your frequent files, folders, or websites:
     
     - Type the name of that 'place' into spotlight.
-      (IMPORTANT:  Invent a one-word nickname for the place if it does not already have a natural short name
-                   Its ok to even invent a "comboword" word if needed.)
+      (IMPORTANT:  Invent a one-word nickname for the place if it does not already have 
+                   a natural short name.  Its ok to invent a "comboword" word if needed.)
 
-    - If your desired 'place' did not appear then
+    - If your desired 'place' did not appear then:
       - Go that 'place' manually, and
       - Type 'fix' into spotlight in order to "fix" the nickname for next time.
   
+
 
   
 # Advanced Usage
