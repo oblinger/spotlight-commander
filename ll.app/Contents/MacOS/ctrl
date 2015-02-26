@@ -14,12 +14,15 @@ import time
 import json
 
 # cmd_fix
+# 'SS' commnand should be reworked (remove prev, allow setting action w. current?)
 # current_link should check if file is document or folder and set action
 # do this:   installer, move /ob/cmd, add 'icon' to apps
+# -- fix EDITOR thing
+
 
 
 CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
-RESCAN_ROOT = '/ob'
+RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 HOME = os.getenv('HOME')
 LAUNCH_LOG = '%s/.ll_launchlog' % HOME
 PARAMS_FILE = '%s/.ll_params' % HOME
@@ -162,7 +165,7 @@ def main():
             os.sys.exit(0)
     a1 = argv[1] if len(argv)>1 else ''
 
-    if a1[0:2]=='--':   base = a1[2:]
+    if a1[0:2]=='--':     base = a1[2:]
     elif a1[0:1]=='-':    base = a1[1:]
     else: base = a1
     base = SHORTCUTS.get(base) or base
@@ -359,15 +362,16 @@ def cmd_remove():
     os.system('rm -r "%s"' % path)
 
 
-def cmd_rescan(root=RESCAN_ROOT):
-    print "### SCANNING FOLDERS UNDER %r FOR TARGETS FOR NEW COMMANDS" % root
-    for f in recursive_file_gen(root):
-        name,jtarget = get_named_referent(f)
-        if name:
-            cap  = cap_get_by_name(name, default=None)
-            if not cap or cap[TARGET]!=f:
-                print '### New FILE   link: %r to %r' % (name, f)
-                cap_set({NAME:name, ACTION:'doc', TARGET:f})
+def cmd_rescan(roots=RESCAN_ROOTS):
+    print "### SCANNING FOLDERS UNDER %s FOR TARGETS FOR NEW COMMANDS" % ', '.join(roots)
+    for root in roots:
+        for f in recursive_file_gen(root):
+            name,jtarget = get_named_referent(f)
+            if name:
+                cap  = cap_get_by_name(name, default=None)
+                if not cap or cap[TARGET]!=f:
+                    print '### New FILE   link: %r to %r' % (name, f)
+                    cap_set({NAME:name, ACTION:'doc', TARGET:f})
             # if jtarget and False: ################################################
             #     jname = 'j%s' % name
             #     jcap = cap_get_by_name(jname, default=None)
@@ -672,7 +676,8 @@ def get_named_referent(f):
 
     if nbase in ['readme', 'changelog', 'history']:
         return None, None                               # Ignore these files
-    elif pbase==nbase:
+    elif (len(nbase)>=3 and pbase==nbase) or \
+         (len(nbase)>=6 and pbase.endswith(nbase)):
         return nbase, parent_path                       # Return folder reference
     elif nsplit[0][0:1]=='_':
         return nbase, None                              # Return file reference
