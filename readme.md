@@ -12,23 +12,32 @@ why isn't your COMPUTER remembering what you call each thing, so you do have to?
 
 # Installation
 
-- Download the [installer zip file](https://drive.google.com/open?id=0B1nxErVPR2RaLTBvb2pLTVdRZmM&authuser=0).
 - Download the [installer zip file](https://docs.google.com/uc?authuser=0&id=0B1nxErVPR2RaLTBvb2pLTVdRZmM&export=download).
 - Double click on the SpotlightCommander.app file.
 
 
 # Basic Usage 
 
-    Operating at the speed of thought.
+Operating at the speed of thought -- Trying to remember where something is or what it is called, 
+traversing file folders to find it, using the mouse, and opening up 'viewer' applications,  
+all break our mental flow.
 
-    - Type the name of the thing you want to go into spotlight.
-      (IMPT:  Invent a one-word nickname for the place -- even a made-up "comboword" word if needed.)
+We should just be able think of the name of any one of a thousand 'things', and that thing simply appears.
+
+To achieve this we must not put spotlight things into OUR HEADS, instead we must whats in our head INTO SPOTLIGHT!
 
 
-    - If your desired 'thing' did not appear then
-      - Go that 'thing' manually
-      - Type 'fix' into spotlight to "fix" the nickname for next time.
+    Simplest Usage Pattern -- **Each time** you go to one of your frequent files, folders, or websites:
+    
+    - Type the name of that 'place' into spotlight.
+      (IMPORTANT:  Invent a one-word nickname for the place if it does not already have a natural short name
+                   Its ok to even invent a "comboword" word if needed.)
+
+    - If your desired 'place' did not appear then
+      - Go that 'place' manually, and
+      - Type 'fix' into spotlight in order to "fix" the nickname for next time.
   
+
   
 # Advanced Usage
 
@@ -46,9 +55,4 @@ HARD COLLISIONS -- In very rare cases
 will only
 affect you ONCE when you try to use that word and expect
  
-
-
-# Installation
-
-tbd
 
