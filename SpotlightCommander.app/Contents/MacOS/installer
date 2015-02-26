@@ -1,38 +1,31 @@
 #!/usr/bin/env python
 
-
-from __future__ import print_function
-import logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
-logger = logging.getLogger()
-logger.addHandler(logging.FileHandler('/ob/stdout.txt', 'a'))
-print = logger.info
-print('STD OUT LOGGING ON')
-
-
-
-
-
 import os
 
 INSTALLATION_FOLDER = '/Applications'
 CTRL_SCRIPT         = 'Contents/MacOS/ctrl'
 
 def installer_bootstrap():
-    print('d')
-    dir_up = os.path.dirname
-    src_root = dir_up(dir_up(dir_up(os.path.abspath(__file__))))
-    dest_root = '%s/%s' % (INSTALLATION_FOLDER, os.path.basename(src_root))
+    dest = INSTALLATION_FOLDER
+    src_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    dest_root = '%s/%s' % (dest, os.path.basename(src_root))
 
-    print("BOOTSTRAP INSTALLER:")
-    raw_input('Install SpotlightCommander in %r' % INSTALLATION_FOLDER)
-    print("- Copying tree from %r to %r" % (src_root, INSTALLATION_FOLDER))
-    os.system('cp -r "%s" "%s"' % (src_root, INSTALLATION_FOLDER))
+    print('\033[0;0H\033[2J\n\n  SPOTLIGHT-COMMANDER INSTALL')
+    print("  (1) Copies application to %r\n      from %r" % (dest,src_root))
+    print("  (2) Invokes 'SpotlightCommander --install'  to create initial commands")
+    print("")
+    print("  UNINSTALL INSTRUCTIONS")
+    print("     -- Remove app from /Applications")
+    print("     -- Remove the commands folder 'cmd' folder in the user's HOME folder.")
+    ask=raw_input('\n\n  Perform installation [y/n]? ')
+    if len(ask)<1 or ask.lower()[0]!='y':
+        os.sys.exit(0)
 
-    print("BOOTSTRAP INSTALLER:  Invoking SpotlightCommander --install")
+    os.system('cp -r "%s" "%s"' % (src_root, dest))
     os.system('%s/%s --install' % (dest_root, CTRL_SCRIPT))
 
-print('wtf')
+    raw_input('\nInstallation complete.  Press "return" to exit')
+
 installer_bootstrap()
 
 

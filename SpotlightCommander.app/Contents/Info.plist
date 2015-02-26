@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>applet</string>
 	<key>CFBundleIconFile</key>
-	<string>macflux</string>
+	<string>applet</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.spotlightninja.applica</string>
 	<key>CFBundleInfoDictionaryVersion</key>

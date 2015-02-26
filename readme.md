@@ -10,11 +10,16 @@ folders, or specific web pages.
 By continuously telling spotlight what name the user already has for each item, we allow SPOTLIGHT to remember 
 how a user thinks about all of their stuff, rather than forcing a USER to try to remember where stuff is.
 
+# Installation
+
+Double click on the SpotlightCommander.app file.
+
+
 # Basic Usage 
 
 Operating at the speed of thought.
 
-- Think of (or invent) a name for the 'place' (url,doc,etc.) you want to open.
+- Think of (or invent) a name for the 'place' (url,doc,etc.) you want the computer to 'go'.
 
 - Type that name into spotlight.  (Press Command-space to open spotlight)
 
