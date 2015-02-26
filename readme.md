@@ -13,19 +13,21 @@ why isn't your COMPUTER remembering what you call each thing, so you do have to?
 # Installation
 
 - Download the [installer zip file](https://drive.google.com/open?id=0B1nxErVPR2RaLTBvb2pLTVdRZmM&authuser=0).
+- Download the [installer zip file](https://docs.google.com/uc?authuser=0&id=0B1nxErVPR2RaLTBvb2pLTVdRZmM&export=download).
 - Double click on the SpotlightCommander.app file.
 
 
 # Basic Usage 
 
-Operating at the speed of thought.
+    Operating at the speed of thought.
 
-- Think of (or invent) a name for the 'place' (url,doc,etc.) you want the computer to 'go'.  \
-  Type that name into spotlight.  (Press Command-space to open spotlight)
+    - Type the name of the thing you want to go into spotlight.
+      (IMPT:  Invent a one-word nickname for the place -- even a made-up "comboword" word if needed.)
 
-- If that did not work then 
-  - Open that 'place' manually
-  - Enter 'ss' to SPOTLIGHT SAVE for next time.
+
+    - If your desired 'thing' did not appear then
+      - Go that 'thing' manually
+      - Type 'fix' into spotlight to "fix" the nickname for next time.
   
   
 # Advanced Usage
