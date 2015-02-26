@@ -27,7 +27,9 @@ We should just be able think of the name of any one of a thousand 'things', and 
 To achieve this we must not put spotlight things into OUR HEADS, instead we must whats in our head INTO SPOTLIGHT!
 
 
-    Simplest Usage Pattern -- **Each time** you go to one of your frequent files, folders, or websites:
+**USAGE PATTERN** 
+
+    EACH TIME you go to one of your frequent files, folders, or websites:
     
     - Type the name of that 'place' into spotlight.
       (IMPORTANT:  Invent a one-word nickname for the place if it does not already have a natural short name
