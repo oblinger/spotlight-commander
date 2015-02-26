@@ -13,6 +13,7 @@ import textwrap
 import time
 import json
 
+# Use sym link for .icns file
 # cmd_fix
 # 'SS' commnand should be reworked (remove prev, allow setting action w. current?)
 # current_link should check if file is document or folder and set action
