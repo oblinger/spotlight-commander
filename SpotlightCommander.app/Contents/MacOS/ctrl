@@ -728,8 +728,11 @@ def last_command_name():
     return names[-1] if len(names)>0 else None
 
 def last_commands(n):
-    with open(LAUNCH_LOG, 'r') as f:
-        return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
+    try:
+        with open(LAUNCH_LOG, 'r') as f:
+            return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
+    except:
+        return []
 
 
 def recursive_file_gen(mydir):

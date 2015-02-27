@@ -17,8 +17,8 @@ launcher_keys = None    # This is set to the 'keys' parsed from the launcher
 
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
-TRAMPOLINE_FILE = '/tmp/ll_trampoline'
-LAUNCH_LOG = '%s/.ll_launchlog' % os.getenv('HOME')
+TRAMPOLINE_FILE = '/tmp/spot_cmdr_trampoline'
+LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % os.getenv('HOME')
 
 PATH = 'path'
 ACTION = 'action'
