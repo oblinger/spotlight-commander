@@ -365,14 +365,6 @@ def cmd_rescan(roots=RESCAN_ROOTS):
                 if not cap or cap[TARGET]!=f:
                     print '### New FILE   link: %r to %r' % (name, f)
                     cap_set({NAME:name, ACTION:'doc', TARGET:f})
-            # if jtarget and False: ################################################
-            #     jname = 'j%s' % name
-            #     jcap = cap_get_by_name(jname, default=None)
-            #     if not jcap or jcap[TARGET]!=jtarget:
-            #         print '### New FOLDER link: %r to %r' % (jname, jtarget)
-            #         cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
-
-
 
 
 def cmd_set(ask=True):
@@ -422,6 +414,10 @@ def cmd_ss(**kwargs):
     default = 'n' if cmd=='c' and cap[ACTION] not in ['doc', 'folder'] else 'y'
     if not ask or yes_or_no('Launch command now', default):
         cmd_execute(cap[NAME])
+
+def cmd_fix():
+    print "zzzz"
+    raw_input()
 
 
 def cmd_test():
