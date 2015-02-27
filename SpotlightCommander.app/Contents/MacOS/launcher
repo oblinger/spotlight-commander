@@ -29,15 +29,20 @@ ARG = 'arg'
 
 
 def main():
-    global debug
-    argv = os.sys.argv
-    print('### "launcher" called with: %s' % argv)
+    global debug, launcher_keys
+    argv = os.sys.argv + [None, None, None]
+    if argv[1]!='--prompt':
+        print('### "launcher" called with: %s' % os.sys.argv)
     if len(argv)>1 and argv[1]=='--debug':
         debug=True
         argv = argv[1:]
     a1 = argv[1] if len(argv)>1 else ''
     if a1=='--launch' or a1=='--now_in_console':
         return cmd_launch(argv)
+    if a1=='--prompt':
+        launcher_keys = {'title':argv[3] or 'Spotlight Commander'}
+        print user_input(argv[2])
+        return
     error("unknown command %r" % a1)
 
 
@@ -186,7 +191,7 @@ def user_input(prompt):
     if launcher_keys.get('io'):
         user_input_result = raw_input('%s ' % prompt)
     else:
-        title = os.path.splitext(os.path.basename(os.path.dirname(
+        title = launcher_keys.get('title') or os.path.splitext(os.path.basename(os.path.dirname(
             os.path.dirname(os.path.dirname(launcher_keys[PATH])))))[0]
         one_line_input_gui(field=prompt, title=title)
         #time.sleep(0.1)

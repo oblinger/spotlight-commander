@@ -36,8 +36,8 @@ To achieve this we must not put spotlight things into OUR HEADS, instead we must
                    a natural short name.  Its ok to invent a "comboword" word if needed.)
 
     - If your desired 'place' did not appear then:
-      - Go that 'place' manually, and
-      - Type 'fix' into spotlight in order to "fix" the nickname for next time.
+      - Go that 'place' manually (which you have to do anyways), then
+      - Type 'fix' into spotlight in order to "fix" this nickname for next time.
   
 
 

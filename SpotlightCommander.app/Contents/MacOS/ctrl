@@ -149,7 +149,7 @@ def main():
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
-    #argv = ['','--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
+    argv = ['','--fix', '--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
@@ -242,15 +242,7 @@ def cmd_finder(name=None):
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-
-def cmd_fix():
-    name = get_clipboard()
-    if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
-        params(fix_command=name, time=int(time.time()))
-    else:
-        pass
-        #last_command_append({'error':'bad command', 'thename':name})
-
+# FIX
 
 def cmd_last():
     cap = get_current_link()
@@ -308,12 +300,12 @@ def cmd_move():
 
 def cmd_named_browser():
     """Prompts user for name for link to URL in the top Chrome tab"""
-    cmd_browser(prompt('Enter name for link to current Chrome URL'))
+    cmd_browser(user_input('Enter name for link to current Chrome URL'))
 
 
 def cmd_named_finder():
     """Prompts user for name for link to document selected in finder"""
-    cmd_finder(prompt('Enter name for link to file selected & clipboarded in Finder'))
+    cmd_finder(user_input('Enter name for link to file selected & clipboarded in Finder'))
 
 
 def cmd_new():
@@ -340,7 +332,7 @@ def cmd_rebuild():
     folder = CMD_DIR
     a1 = arg(1, default_value=None)
     suffix = ' starting with %r' % a1 if a1 else ''
-    if 'y'!=prompt('press "y" to REBUILD each CAPs under %s%s' % (folder, suffix)):
+    if 'y'!=user_input('press "y" to REBUILD each CAPs under %s%s' % (folder, suffix)):
         return
     for cap in cap_get_all(folder):
         if not a1 or cap[NAME].lower().startswith(a1.lower()):
@@ -371,9 +363,9 @@ def cmd_set(ask=True):
     last_cmd_name = last_command_name()
     cap           = get_current_link()
     if ask:
-        cap[NAME]   = prompt('Command to set', last_cmd_name)
-        cap[ACTION] = prompt('Command action', cap.get(ACTION, ''))
-        cap[TARGET] = prompt('Command target', cap.get(TARGET, ''))
+        cap[NAME]   = user_input('Command to set', last_cmd_name)
+        cap[ACTION] = user_input('Command action', cap.get(ACTION, ''))
+        cap[TARGET] = user_input('Command target', cap.get(TARGET, ''))
     cap_set(cap)
 
 
@@ -386,14 +378,14 @@ def cmd_ss(**kwargs):
     cmd       = 'c' # value used if not 'ask'
     if ask:
         print "SET COMMAND\n"
-        name = prompt('Set command named', name)
+        name = user_input('Set command named', name)
         print "Type 'c' or 'p' to assign CURRENT WINDOW, or PREVIOUS COMMAND to '%s'" % name
         print "Or type  'url', 'doc', 'folder' then paste any other target URL or path"
         print
         print "  Current:  %s" % cap_desc(cur_cap)
         if last_cap:  print "  Previous: %s" % cap_desc(last_cap)
         print
-        cmd = prompt('Set %r as' % name)
+        cmd = user_input('Set %r as' % name)
     if cmd == 'p':
         cap = last_cap
     elif cmd == 'c':
@@ -415,10 +407,47 @@ def cmd_ss(**kwargs):
     if not ask or yes_or_no('Launch command now', default):
         cmd_execute(cap[NAME])
 
-def cmd_fix():
-    print "zzzz"
-    raw_input()
 
+def cmd_fix():
+    cap       = get_current_link_while_in_console()
+    cap[NAME] = last_command_name()
+    print "FIX THE %r COMMAND" % cap[NAME].upper()
+    print "- PRESS RETURN to accept new target below"
+    print "- PASTE a url or path to fix to a different target"
+    print "- ADD 'xxx=' to change the command being updated to be 'xxx'"
+    print ""
+    print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
+    input = user_input('SET %r [Y/n]' % cap[NAME])
+    if input=='n':
+        return
+    if '=' in input:
+        idx = input.index('=')
+        cap[NAME]=input[:idx].strip()
+        input = input[idx+1:].strip()
+    if input!='' and input!='y':
+        cap[TARGET]=input
+        cap[ACTION]=infer_action(input)
+    print("CMD: %s" % cap_to_str(cap))
+    #cap_set(cur_cap, verbose=True)
+
+MAX_FIX_DELAY = 60
+
+def cmd_fix_toggle():
+    now=int(time.time())
+    keys=params()
+    if now-keys.get('fix_time', 0)<MAX_FIX_DELAY:
+        pass
+#
+#
+#
+# def cmd_fix_old():
+#     name = get_clipboard()
+#     if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
+#         params(fix_command=name, ))
+#     else:
+#         pass
+#         #last_command_append({'error':'bad command', 'thename':name})
+#
 
 def cmd_test():
     send_key(48, 'command down')
@@ -673,6 +702,16 @@ def get_named_referent(f):
     else:
         return None, None                               # Return no reference at all
 
+def infer_action(target):
+    if '://' in target:
+        return 'url'
+    if target.startswith('/'):
+        if os.path.isdir(target):
+            return 'folder'
+        if os.path.isfile(target):
+            return 'doc'
+        error('Target file %r does not exist' % target)
+    error('Use full url/path.  Cannot tell if target is a file, folder, or URL.')
 
 params_cache = None
 def params(**updates):
@@ -718,13 +757,13 @@ def get_current_link():
 
 def last_command_name():
     """Returns the last launched command that is not in the ignore list."""
-    IGNORE = ['ss', 'ss1']
+    IGNORE = ['ss', 'ss1', 'fix']
     def get_name(args):
         fldr = os.path.dirname(os.path.dirname(os.path.dirname(args[0])))
         return os.path.splitext(os.path.basename(fldr))[0].encode('utf-8')
     names = [get_name(args) for args in last_commands(20)]
     #print "Last commands: %s" % ', '.join(names)
-    names = [n for n in names if n not in IGNORE]
+    names = [n for n in names if n.lower() not in IGNORE]
     return names[-1] if len(names)>0 else None
 
 def last_commands(n):
@@ -777,10 +816,13 @@ def yes_or_no(str, default=''):
     suffix = ' [Y/n]? ' if default=='y' else ' [y/N]? '
     return 'y' == (raw_input(str+suffix) or default).strip()[0:1].lower()
 
-def prompt(prompt, default_value=''):
+def user_input(prompt, default_value=''):
     dv =  ' (%s)' % default_value if default_value else ''
     val = raw_input(prompt+dv+': ')
     return val or default_value
+
+def user_input_no_console(prompt, default_value=''):
+    return system_to_str('%s/launcher'% (APPLET_FOLDER,), '--prompt', prompt)
 
 def error(err_str):
     raw_input("\n\nERROR: %s\n\n(press RETURN to exit)" % err_str)
@@ -880,6 +922,12 @@ def osa_fn(*lines):
     p = subprocess.Popen(cmd, bufsize=0, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
     stdout,stderr = p.communicate()
     return stdout.rstrip()
+
+def system_to_str(*arglist):
+    p = subprocess.Popen(arglist, bufsize=0, stdout=subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout,stderr = p.communicate()
+    return stdout.rstrip()
+
 
 
 
