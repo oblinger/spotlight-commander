@@ -149,7 +149,7 @@ def main():
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
-    argv = ['','--fix', '--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
+    #argv = ['','--fix', '--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
@@ -418,6 +418,7 @@ def cmd_fix():
     print ""
     print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
     input = user_input('SET %r [Y/n]' % cap[NAME])
+    isname = len(input)>2 and len(input)<20 and re.match(WORD_REGEX, input)
     if input=='n':
         return
     if '=' in input:
@@ -426,7 +427,7 @@ def cmd_fix():
         input = input[idx+1:].strip()
     if input!='' and input!='y':
         cap[TARGET]=input
-        cap[ACTION]=infer_action(input)
+        cap[ACTION]=infer_action(input, error=False)
     print("CMD: %s" % cap_to_str(cap))
     #cap_set(cur_cap, verbose=True)
 
