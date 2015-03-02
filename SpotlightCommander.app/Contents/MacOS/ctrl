@@ -431,8 +431,9 @@ def cmd_fix(name=None):
     if input!='' and input!='y':
         cap[TARGET]=input
         cap[ACTION]=infer_action(input, error=False)
-    print("CMD: %s" % cap_to_str(cap))
-    cap_set(cap, verbose=True)
+    if cap.get(ACTION):
+        print("CMD: %s" % cap_to_str(cap))
+        cap_set(cap, verbose=True)
 
 TWO_STEP_FIX_RESET_TIME = 200
 
@@ -726,7 +727,8 @@ def get_named_referent(f):
     else:
         return None, None                               # Return no reference at all
 
-def infer_action(target):
+def infer_action(target, **kwargs):
+    error = kwargs.get('error', True)
     if '://' in target:
         return 'url'
     if target.startswith('/'):
@@ -734,8 +736,11 @@ def infer_action(target):
             return 'folder'
         if os.path.isfile(target):
             return 'doc'
-        error('Target file %r does not exist' % target)
-    error('Use full url/path.  Cannot tell if target is a file, folder, or URL.')
+        if error:
+            error('Target file %r does not exist' % target)
+    if error:
+        error('Use full url/path.  Cannot tell if target is a file, folder, or URL.')
+    return None
 
 params_cache = None
 def params(**updates):
