@@ -22,6 +22,7 @@ import json
 
 
 
+TWO_STEP_FIX_RESET_TIME = 200     # Reset time when the two step reset command revert's back to step 1
 CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 HOME = os.getenv('HOME')
@@ -245,7 +246,30 @@ def cmd_finder(name=None):
     cap_set({NAME:name, ACTION:'doc', TARGET:target})
     cap_set({NAME:'J'+name, ACTION:'folder', TARGET:target_folder})
 
-# FIX
+
+def cmd_fix(name=None):
+    cap       = get_current_link_while_in_console()
+    cap[NAME] = name or last_command_name()
+    print "FIX THE %r COMMAND" % cap[NAME].upper()
+    print "- PRESS RETURN to accept new target below"
+    print "- PASTE a url or path to fix to a different target"
+    print "- ADD 'xxx=' to change the command being updated to be 'xxx'"
+    print ""
+    print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
+    input = user_input('SET %r [Y/n]' % cap[NAME])
+    if input=='n':
+        return
+    if '=' in input:
+        idx = input.index('=')
+        cap[NAME]=input[:idx].strip()
+        input = input[idx+1:].strip()
+    if input!='' and input!='y':
+        cap[TARGET]=input
+        cap[ACTION]=infer_action(input, error=False)
+    if cap.get(ACTION):
+        print("CMD: %s" % cap_to_str(cap))
+        cap_set(cap, verbose=True)
+
 
 def cmd_last():
     cap = get_current_link()
@@ -412,30 +436,19 @@ def cmd_ss(**kwargs):
         cmd_execute(cap[NAME])
 
 
-def cmd_fix(name=None):
-    cap       = get_current_link_while_in_console()
-    cap[NAME] = name or last_command_name()
-    print "FIX THE %r COMMAND" % cap[NAME].upper()
-    print "- PRESS RETURN to accept new target below"
-    print "- PASTE a url or path to fix to a different target"
-    print "- ADD 'xxx=' to change the command being updated to be 'xxx'"
-    print ""
-    print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
-    input = user_input('SET %r [Y/n]' % cap[NAME])
-    if input=='n':
-        return
-    if '=' in input:
-        idx = input.index('=')
-        cap[NAME]=input[:idx].strip()
-        input = input[idx+1:].strip()
-    if input!='' and input!='y':
-        cap[TARGET]=input
-        cap[ACTION]=infer_action(input, error=False)
-    if cap.get(ACTION):
-        print("CMD: %s" % cap_to_str(cap))
-        cap_set(cap, verbose=True)
+def cmd_test():
+    send_key(48, 'command down')
 
-TWO_STEP_FIX_RESET_TIME = 200
+
+def cmd_test_scan(folder=CMD_DIR+'/old'):
+    for name in os.listdir(folder):
+        path = '%s/%s' % (folder, name)
+        keys = cap_get(path)
+        if not keys:
+            print "Ignoring %s" % path
+            continue
+        if keys[ACTION] not in ['doc', 'folder', 'url', 'app']:  print cap_to_str(keys)
+
 
 def cmd_two_step_fix():
     now=int(time.time())
@@ -459,36 +472,6 @@ def cmd_two_step_fix():
         name = get_clipboard()
         if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
             params(fix_time=now, fix_command=name)
-
-
-
-#
-#
-#
-# def cmd_fix_old():
-#     name = get_clipboard()
-#     if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
-#         params(fix_command=name, ))
-#     else:
-#         pass
-#         #last_command_append({'error':'bad command', 'thename':name})
-#
-
-def cmd_test():
-    send_key(48, 'command down')
-
-
-def cmd_test_scan(folder=CMD_DIR+'/old'):
-    for name in os.listdir(folder):
-        path = '%s/%s' % (folder, name)
-        keys = cap_get(path)
-        if not keys:
-            print "Ignoring %s" % path
-            continue
-        if keys[ACTION] not in ['doc', 'folder', 'url', 'app']:  print cap_to_str(keys)
-        #if keys:  cap_set(keys)
-        #if keys:  scan_rebuild_cap(keys)
-        #scan_process_file(keys)
 
 
 def cmd_usage():
