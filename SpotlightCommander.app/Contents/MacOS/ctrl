@@ -29,7 +29,7 @@ LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
 PARAMS_FILE = '%s/.spot_cmdr_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
-EDITOR = 'sub'     # todo: FIX THIS
+#EDITOR = '/Applications/TextMate.app/Contents/SharedSupport/Support/bin/mate'  # todo: FIX THIS
 APPLET_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
 PYTHON_LAUNCHER_PREFIX = "#!/usr/bin/env python %s/launcher --launch\n" % APPLET_FOLDER
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
@@ -149,7 +149,7 @@ def main():
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
     argv = os.sys.argv
-    #argv = ['','--fix', '--create', 'zzz7', 'doc', '/ob/data/MyDesk/jdata/jdata.app']
+    #argv = ['', 'two_step_fix']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
@@ -215,7 +215,10 @@ def cmd_edit():
         return
     path = cap_find_one(prefix) + '/Contents/MacOS/applet'
     #clean_file(path)
-    os.system('%s "%s"' % (EDITOR, path))
+    line='%s "%s"' % (EDITOR, path)
+    print " $ %s" % line
+    os.system('echo ED $EDITOR')
+    os.system(line)
     #clean_file(path)
 def clean_file(path):
     original = read_file(path)
@@ -275,10 +278,11 @@ def cmd_install(reinstall=True):
     cap_set({NAME:'llrm', ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name'}, verbose=True)
     cap_set({NAME:'llv',  ACTION:'command', TARGET:'%s -v'     % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'COPY', ACTION:'command', TARGET:'%s copy'   % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'FIX',  ACTION:'command', TARGET:'%s fix'    % script},                verbose=True)
+    cap_set({NAME:'FIX',  ACTION:'command', TARGET:'%s fix'    % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'LAST', ACTION:'command', TARGET:'%s last'   % script},                verbose=True)
     cap_set({NAME:'NEW',  ACTION:'command', TARGET:'%s new'    % script, IO: 'console'}, verbose=True)
     cap_set({NAME:'SET',  ACTION:'command', TARGET:'%s set'    % script, IO: 'console'}, verbose=True)
+    cap_set({NAME:'TWO_STEP_FIX',  ACTION:'command', TARGET:'%s two_step_fix' % script}, verbose=True)
     cap_set({NAME:'ss',   ACTION:'command', TARGET:'%s ss'     % script, IO: 'console'}, verbose=True)
 
 
@@ -408,9 +412,9 @@ def cmd_ss(**kwargs):
         cmd_execute(cap[NAME])
 
 
-def cmd_fix():
+def cmd_fix(name=None):
     cap       = get_current_link_while_in_console()
-    cap[NAME] = last_command_name()
+    cap[NAME] = name or last_command_name()
     print "FIX THE %r COMMAND" % cap[NAME].upper()
     print "- PRESS RETURN to accept new target below"
     print "- PASTE a url or path to fix to a different target"
@@ -418,7 +422,6 @@ def cmd_fix():
     print ""
     print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
     input = user_input('SET %r [Y/n]' % cap[NAME])
-    isname = len(input)>2 and len(input)<20 and re.match(WORD_REGEX, input)
     if input=='n':
         return
     if '=' in input:
@@ -429,15 +432,35 @@ def cmd_fix():
         cap[TARGET]=input
         cap[ACTION]=infer_action(input, error=False)
     print("CMD: %s" % cap_to_str(cap))
-    #cap_set(cur_cap, verbose=True)
+    cap_set(cap, verbose=True)
 
-MAX_FIX_DELAY = 60
+TWO_STEP_FIX_RESET_TIME = 200
 
-def cmd_fix_toggle():
+def cmd_two_step_fix():
     now=int(time.time())
     keys=params()
-    if now-keys.get('fix_time', 0)<MAX_FIX_DELAY:
-        pass
+    if now-keys.get('fix_time', 0)<TWO_STEP_FIX_RESET_TIME:
+        print 'TWO -- Fix the captured command'
+        params(fix_time=0)
+        os.system('%s/ctrl -x fix' % (APPLET_FOLDER,))
+        #cmd_fix(keys['fix_command'])
+    else:
+        print 'ONE -- Capture command'
+        time.sleep(4.0)
+        send_keys('a', 'command down')
+        time.sleep(1)
+        send_keys('c', 'command down')
+        time.sleep(1)
+        send_key(53)
+        time.sleep(1)
+        send_key(53)
+        time.sleep(1)
+        name = get_clipboard()
+        if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
+            params(fix_time=now, fix_command=name)
+
+
+
 #
 #
 #
@@ -747,7 +770,7 @@ def get_current_link():
         cap[ACTION] = 'url'
     elif current_app=='Finder':
         cap[TARGET] = get_finder_selection_path()
-        cap[ACTION] =  'doc'
+        cap[ACTION] =  infer_action(cap[TARGET])
     elif current_app=='':
         cap[TARGET] = 'none'
         cap[ACTION] = 'none'

@@ -26,48 +26,30 @@ TARGET = 'target'
 IO = 'io'
 PROMPT = 'prompt'
 ARG = 'arg'
+FLAGS = ['--prompt', '--debug', '--launch', '--now_in_console']
 
 
 def main():
     global debug, launcher_keys
-    argv = os.sys.argv + [None, None, None]
-    if argv[1]!='--prompt':
-        print('### "launcher" called with: %s' % os.sys.argv)
-    if len(argv)>1 and argv[1]=='--debug':
+    keys = os.sys.argv
+    rest = list(keys[1:]) + [None, None, None]
+    rest = [arg for arg in rest if arg not in FLAGS]
+    if '--prompt' not in keys:
+        print('### "launcher" called with: %r' % os.sys.argv)
+        #raw_input('sdfg')
+    if '--debug' in keys:
         debug=True
-        argv = argv[1:]
-    a1 = argv[1] if len(os.sys.argv)>1 else ''
-    if a1=='--launch' or a1=='--now_in_console':
-        return cmd_launch(argv)
+    if '--launch' in keys or '--now_in_console' in keys:
+        return cmd_launch(rest[0], '--now_in_console' in keys)
     if a1=='--prompt':
-        launcher_keys = {'title':argv[3] or 'Spotlight Commander'}
-        print user_input(argv[2])
+        launcher_keys = {'title':rest[2] or 'Spotlight Commander'}
+        print user_input(rest[1])
         return
-    error("unknown command %r" % a1)
+    error("unknown command %r" % keys)
 
-
-def main_NEW():
-    global debug, launcher_keys
-    argv = os.sys.argv[1:] + [None, None, None]
-    if argv[1]!='--prompt':
-        print('### "launcher" called with: %s' % os.sys.argv)
-    if len(argv)>1 and argv[1]=='--debug':
-        debug=True
-        argv = argv[1:]
-    a1 = argv[1] if len(os.sys.argv)>1 else ''
-    if a1=='--launch' or a1=='--now_in_console':
-        return cmd_launch(argv)
-    if a1=='--prompt':
-        launcher_keys = {'title':argv[3] or 'Spotlight Commander'}
-        print user_input(argv[2])
-        return
-    error("unknown command %r" % a1)
-
-
-def cmd_launch(argv):
+def cmd_launch(applet_path, now_in_console):
     global launcher_keys
-    now_in_console = argv[1]=='--now_in_console'
-    keys = appkeys(argv[2])
+    keys = appkeys(applet_path)
     launcher_keys = keys
     if (debug or keys.get(IO) in ['console', 'pinned']) and not now_in_console:
         print "Trampoline into console:  %s" % cap_to_str(keys)
@@ -79,30 +61,26 @@ def cmd_launch(argv):
     if now_in_console and not debug:
         print '\033[0;0H\033[2J'
     else:
+        print '\n\n'
         for k,v in keys.iteritems():
             print "###   %s = %r" % (k,v)
-    print '\n\n'
     with open(LAUNCH_LOG, 'a+') as f:
-        f.write(json.dumps(argv[2:]))
+        f.write(json.dumps(applet_path))
         f.write('\n')
     if keys.get(PROMPT):
-        line = 'from_user'
         line = user_input(keys[PROMPT])
         keys[ARG] = line
         if not line:
             return                          # EXIT: terminate command w/o user input
-
     try:
         fn=globals()['type_%s' % keys['action']]
     except KeyError:
         error("Unknown action type '%s'" % keys.get('action'))
     try:
-        #user_input(keys[PROMPT])
         fn(keys)
     except Exception, err:
         keys[IO]='pinned'
         print traceback.format_exc()
-        #print sys.exc_info()[0]
     if keys.get(IO)=='pinned' or debug:
         raw_input('\n(press RETURN to exit)')
 
@@ -254,3 +232,22 @@ def fetch_and_execute(entries, root):
 
 
 main()
+
+
+#
+# def main_OLD():
+#     global debug, launcher_keys
+#     argv = os.sys.argv + [None, None, None]
+#     if argv[1]!='--prompt':
+#         print('### "launcher" called with: %s' % os.sys.argv)
+#     if len(argv)>1 and argv[1]=='--debug':
+#         debug=True
+#         argv = argv[1:]
+#     a1 = argv[1] if len(os.sys.argv)>1 else ''
+#     if a1=='--launch' or a1=='--now_in_console':
+#         return cmd_launch(argv)
+#     if a1=='--prompt':
+#         launcher_keys = {'title':argv[3] or 'Spotlight Commander'}
+#         print user_input(argv[2])
+#         return
+#     error("unknown command %r" % a1)
