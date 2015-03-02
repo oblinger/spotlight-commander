@@ -21,7 +21,7 @@ import json
 # -- fix EDITOR thing
 
 
-
+REFERENT_FILE_TYPES = ['.org', '.md', '.gdoc']
 TWO_STEP_FIX_RESET_TIME = 200     # Reset time when the two step reset command revert's back to step 1
 CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
@@ -691,7 +691,7 @@ def get_named_referent(f):
     """Returns referent name of f if it is a standard referent file.
     If the referent is also a FOLDER referent, then the path to that folder is also returned as a second arg """
     nsplit = os.path.splitext(os.path.basename(f))
-    if nsplit[1] not in ['.org', '.md']:
+    if nsplit[1] not in REFERENT_FILE_TYPES:
         return None, None
     parent_path = os.path.dirname(f)
     parent = os.path.basename(parent_path)
@@ -711,7 +711,7 @@ def get_named_referent(f):
         return None, None                               # Return no reference at all
 
 def infer_action(target, **kwargs):
-    error = kwargs.get('error', True)
+    err = kwargs.get('error', True)
     if '://' in target:
         return 'url'
     if target.startswith('/'):
@@ -719,9 +719,9 @@ def infer_action(target, **kwargs):
             return 'folder'
         if os.path.isfile(target):
             return 'doc'
-        if error:
+        if err:
             error('Target file %r does not exist' % target)
-    if error:
+    if err:
         error('Use full url/path.  Cannot tell if target is a file, folder, or URL.')
     return None
 
