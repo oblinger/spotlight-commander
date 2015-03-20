@@ -109,24 +109,36 @@ followed by its uni-form, and JSON equivelants.  In each case, all threee expres
 and all three map to the same underlying JSON:
 
 
-##### INFIX OPERATORS -- Uniform includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
-
-| **INFIX OPERATOR** |  expr **operator** expr |
-| ------------------ | -------------------- |
+| **PREFIX/INFIX OPERATOR** |  expr OPERATOR expr  |
+| ------------------ | ---------------------|
 | Alternate form:    |x^2+y^2               | 
 |  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) ) |
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
+The Uniform Language includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
-##### BLOCK FORM
 
+<br><br><br>
+
+| **STATEMENT FORM** | head arg1 ... ; |
+| ------------------ | --------------- |
+| Alternate form:    | print "Hello World!"; |
+|  as uni-form       | print("Hello World!") |
+|  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
+
+A statement is just like a uniform expression except it does not have parens, instead it ends with a semicolon (' **;** ').
+
+
+<br><br><br>
 
 | **BLOCK FORM**    | { stmt1; stmt2; ... } |
 | ----------------- | --------------------- |
 | Alternate form:   | { str = "looks like C code to me!"; print str } |
 |  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
 |  as a JSON        | {"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } |
+
+
 
 
 ##### STATEMNT FORM
