@@ -111,19 +111,19 @@ and all three map to the same underlying JSON:
 
 ##### INFIX OPERATORS -- Uniform includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
-    Alternate form:  |   x^2+y^2       
-    as uni-form:     |   '+'( '^'(x, 2), '^'(y, 2) )      Using lingual head tokens:   plus( pow(x, 2), pow(y, 2) )
-	as a JSON:       |   {'^':'+', '^1': {'^':'^', '^1':'x', '^2':2}, {'^':'^', '^1':'y', '^2':2} }
+Alternate form:  |   x^2+y^2       
+as uni-form:     |   '+'( '^'(x, 2), '^'(y, 2) )      Using lingual head tokens:   plus( pow(x, 2), pow(y, 2) )
+as a JSON:       |   {'^':'+', '^1': {'^':'^', '^1':'x', '^2':2}, {'^':'^', '^1':'y', '^2':2} }
 
 
 ##### BLOCK FORM 
 
-    Alternate form:  |    ::Person
-                     |        home :: Address 111 Maple lane  zip:=12345 
-					 |		  
-    as uni-form:     |    Person( home=Address( "111 Maple lane", zip=12345 ) )
-	                 |
-    as a JSON:       |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } }
+Alternate form:  |    ::Person
+                 |        home :: Address 111 Maple lane  zip:=12345 
+	             |		  
+  as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )
+                 |
+    as a JSON:   |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } }
 
 
 
