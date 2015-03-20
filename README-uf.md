@@ -109,9 +109,9 @@ followed by its uni-form, and JSON equivelants.  In each case, all threee expres
 and all three map to the same underlying JSON:
 
 
-
-| **PREFIX/INFIX OPERATOR** |  expr OPERATOR expr  |
+| **PREFIX/INFIX OPERATOR** |
 | ------------------ | ---------------------|
+| | |
 | Alternate form:    |x^2+y^2               | 
 |  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) ) |
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
