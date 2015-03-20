@@ -108,8 +108,9 @@ surface forms shown.  Here we simply demonstrate by example, showing the alterna
 followed by its uni-form, and JSON equivelants.  In each case, all threee expressions are __valid uniform__
 and all three map to the same underlying JSON:
 
+<br><br>
 
-|  | **PREFIX / INFIX OPERATORS**                 |
+|                    | **PREFIX / INFIX OPERATORS** |
 | ------------------ | -------------------------- |
 | Format             | __expr__ **OP** __expr__   |
 | Examples           | - some_var <br> x^2+y^2    | 
@@ -118,25 +119,62 @@ and all three map to the same underlying JSON:
 
 The Uniform Language includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
+<br><br>
 
-<br><br><br>
 
-| **STATEMENT FORM** | head arg1 ... ; |
-| ------------------ | --------------- |
-| Alternate form:    | print "Hello World!"; |
-|  as uni-form       | print("Hello World!") |
+|                    | **STATEMENT FORMS**         |
+| ------------------ | --------------------------- |
+| format             | __head__ __arg1__ ... **;** |
+| Examples           | print "Hello World!";       |
+|  as uni-form       | print("Hello World!")       |
 |  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
 
 A statement is just like a uniform expression except it does not have parens, instead it ends with a semicolon (' **;** ').
 
+<BR>
 
-<br><br><br>
+|                    | **STATEMENT FORMS**         |
+| ------------------ | --------------------------- |
+| format             | __head__ __arg1__ ... **{** ... **}** |
+| Examples           | while x>0 { x-=1 }       |
+|  as uni-form       | while( '>'(x,0), '-='(x,1) ) |
+|  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
 
-| **BLOCK FORM**    | { stmt1; stmt2; ... } |
+Or a statement is ended by the FIRST **{** ... **}** form found.
+
+
+<br><br>
+
+|  | **BLOCK FORM**    | 
+| Format            | **{** stmt1 stmt2 ... **}** |
 | ----------------- | --------------------- |
 | Alternate form:   | { str = "looks like C code to me!"; print str } |
 |  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
 |  as a JSON        | {"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } |
+
+Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
+
+```
+def my_fun(x, int y, z=5) {
+	with open("out.txt", mode="r") as x {
+		x,y = y,x
+	}
+}
+```
+
+```
+def( nonsense_fn(x, int(y), '='(z, 5)), block( 
+	with( open("out.txt", mode="r"), as, x, block(
+		'='( ','(x, y), ','(y,x) )  ))  ))
+```
+
+As with all uni-forms, this latter form trivially maps to JSON as well, but of course because JSON is such a poor format for code-like structures, we will not force the reader to endure that uninteligable mess.  Still a source-code processing algorithms will have no issue with this JSON, indeed JSON is perhaps the most elegant format for machine processing of source-code structures.
+
+The careful reader might note some odd translations in the uni-form above, for example ' int(y) ' looks like we are passing y to some function called int.  Of course declaring a variable in any modern procedural language cannot be implemented by passing the variable to the "int-ifier" function.  But that is not the point here 
+
+Certain forms (for example the if-elif-elif-else form requires some post processing, but as Appendix B shows, even that form fits into Uniform.  
+
+
 
 
 
