@@ -1,10 +1,10 @@
 
 
-<h5>UNIFORM</h5> provides for <h6>SOURCE-CODE<h6> what
-what **YAML** provides for **LISTS**
-</big>
-</big>
-</big>
+<h4>
+UNIFORM provides for SOURCE-CODE what <br>
+what YAML provides for LISTS:
+</h4>
+
 
 
 ### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
