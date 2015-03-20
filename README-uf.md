@@ -109,11 +109,11 @@ followed by its uni-form, and JSON equivelants.  In each case, all threee expres
 and all three map to the same underlying JSON:
 
 
-| . | **PREFIX/INFIX OPERATOR** |
-| ------------------ | ---------------------|
-| Format:            | expr **OP* expr |
-| Examples:    | -foo <br> x^2+y^2               | 
-|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) ) |
+|  | **PREFIX / INFIX OPERATORS**                 |
+| ------------------ | -------------------------- |
+| Format             | __expr__ **OP** __expr__   |
+| Examples           | - some_var <br> x^2+y^2    | 
+|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )|
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
 The Uniform Language includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
