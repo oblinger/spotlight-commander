@@ -12,9 +12,8 @@ other
 
 ````
 
-<font size="18">**UNIFORM** provides for SOURCE-CODE what </font>
-
-<big> what YAML provides for LISTS </big>
+**UNIFORM** provides for **SOURCE-CODE** what \\
+what **YAML** provides for **LISTS**
 
 ### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
 
