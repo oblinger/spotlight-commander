@@ -1,10 +1,6 @@
 
-# UNIFORM
 
-<big>
-<big>
-<big>
-**UNIFORM** provides for **SOURCE-CODE** what
+<h5>UNIFORM</h5> provides for <h6>SOURCE-CODE<h6> what
 what **YAML** provides for **LISTS**
 </big>
 </big>
