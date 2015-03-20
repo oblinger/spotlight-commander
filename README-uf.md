@@ -1,20 +1,14 @@
 
 # UNIFORM
 
-````HTML
-
-<small> test this </small>
-
-<large> Large </large>
-
-other 
-
-
-````
-<h3>
+<big>
+<big>
+<big>
 **UNIFORM** provides for **SOURCE-CODE** what
 what **YAML** provides for **LISTS**
-</h3>
+</big>
+</big>
+</big>
 
 
 ### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
