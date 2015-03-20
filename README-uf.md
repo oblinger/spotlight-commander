@@ -112,20 +112,32 @@ and all three map to the same underlying JSON:
 ##### INFIX OPERATORS -- Uniform includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
 
+| **INFIX OPERATOR** |  expr **operator** expr |
+| ------------------ | -------------------- |
+| Alternate form:    |x^2+y^2               | 
+|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) ) |
+|  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
 
-| Alternate form:   |   x^2+y^2      | 
-| ----------------- | ---------------- |
-|  as uni-form     | '+'( '^'(x, 2), '^'(y, 2) ) |
-|  as a JSON       | {'^':'+', '^1': {'^':'^', '^1':'x', '^2':2}, {'^':'^', '^1':'y', '^2':2} } |
+##### BLOCK FORM
 
 
-##### BLOCK FORM 
+| **BLOCK FORM**    | { stmt1; stmt2; ... } |
+| ----------------- | --------------------- |
+| Alternate form:   | { str = "looks like C code to me!"; print str } |
+|  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
+|  as a JSON        | {"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } |
 
-| Alternate form:  | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
-| ---------------- | ---------------------------------------------------------------------------------- |
-|   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
-|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
+
+##### STATEMNT FORM
+
+| equivelant forms | **STATEMENT FORMS** |
+| ---------------- | ------------------- |
+| Alternate form:  | x^2+y^2               | 
+|  as uni-form      | "+"( "^"(x, 2), "^"(y, 2) ) |
+|  as a JSON        | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
+
+
 
 
 
@@ -137,14 +149,22 @@ and all three map to the same underlying JSON:
 
     as uni-form:          if( equal(x, y), then=return("Same"), else=return("Different"))
 	
-	as a JSON form:       {'^':'if', '^1': {'^':'equals', '^1':'x', '^2':'y'},
-                               'then': {'^':'return', '^1':'Same'},
-						       'else': {'^':'return', '^1':'Different'} }
+	as a JSON form:       {"^":"if", "^1": {"^":"equals", "^1":"x", "^2":"y"},
+                               "then": {"^":"return", "^1":"Same"},
+						       "else": {"^":"return", "^1":"Different"} }
 .
 
     Alternate form:       java_source := 'system.out.println("embedded \"quotes\" and backquotes (\\) are a needless pain!");
 	as a JSON form:       { "java_source": "system.out.println(\"embedded \\\"quotes\\\" and backquotes (\\\\) are a needless pain!\");", 
 
+
+
+##### WHITESPACE SENSITIVE BLOCK FORM 
+
+| Alternate form:  | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
+| ---------------- | ---------------------------------------------------------------------------------- |
+|   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
+|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
 
 
 # OLD
