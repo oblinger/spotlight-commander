@@ -11,10 +11,10 @@ other
 
 
 ````
-<sub>
+<h3>
 **UNIFORM** provides for **SOURCE-CODE** what
 what **YAML** provides for **LISTS**
-</sub>
+</h3>
 
 
 ### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
