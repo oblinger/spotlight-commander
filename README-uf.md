@@ -14,7 +14,7 @@ other
 
 <font size="18">**UNIFORM** provides for SOURCE-CODE what </font>
 
-### what YAML provides for LISTS:  
+<big> what YAML provides for LISTS </big>
 
 ### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
 
