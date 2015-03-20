@@ -59,3 +59,4 @@ will only
 affect you ONCE when you try to use that word and expect
  
 
+Copyright (c) Daniel Oblinger
