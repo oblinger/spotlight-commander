@@ -12,7 +12,7 @@ other
 
 ````
 
-<font size="8">**UNIFORM** provides for SOURCE-CODE what </font>
+<font size="18">**UNIFORM** provides for SOURCE-CODE what </font>
 
 ### what YAML provides for LISTS:  
 
