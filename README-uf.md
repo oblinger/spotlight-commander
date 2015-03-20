@@ -1,8 +1,12 @@
 
 # UNIFORM
 
-UNIFORM is for source-code what YAML is for lists:  a human enjoyable "obvious" markdown syntax which maps to 
-the "obvious" underlying data structure.
+
+
+### UNIFORM provides for SOURCE-CODE what 
+### what YAML provides for LISTS:  
+
+### a human enjoyable "obvious" markdown syntax which maps to the "obvious" underlying data structure.
 
 Like YAML, UNIFORM is also:
 
