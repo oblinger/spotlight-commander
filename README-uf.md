@@ -111,6 +111,13 @@ and all three map to the same underlying JSON:
 
 ##### INFIX OPERATORS -- Uniform includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
 
+| First Header  | Second Header |
+| ------------- | ------------- |
+| Content Cell  | Content Cell  |
+| Content Cell  | Content Cell  |
+
+
+| test this | puppy |
 -----------------|---------------------
 Alternate form:  |   x^2+y^2       
 as uni-form:     |   '+'( '^'(x, 2), '^'(y, 2) )      Using lingual head tokens:   plus( pow(x, 2), pow(y, 2) )
