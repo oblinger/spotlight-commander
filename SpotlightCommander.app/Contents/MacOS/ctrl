@@ -40,7 +40,6 @@ SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
              'p':'print',    'rm':'remove',  'v':'view',
              'x':'execute',  '?':'usage'}
-ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 
 
 USAGE = \
@@ -74,7 +73,7 @@ USAGE = \
  * NOTE: single or double character is a shortcut for the command to its right.
 
 
-  CAP TYPES  (Command APplication Types)
+  CAP TYPES  (Command Application Types)
     app          launches 'target' application
     command      executed 'target' as a /bin/sh shell command line
     doc          opens 'target' as a DOCument
@@ -86,6 +85,13 @@ USAGE = \
     sh           executes entire 'applet' file using the /bin/sh interpreter
     url          opens 'target' as a URL using a web browser
     nstr         opens name in notester
+
+  CAP PARAMETERS
+    action       cap type (see list above)
+    target       filepath, url, etc.
+    io           console, pinned
+    prompt       string used to prompt user  (will be appended to target or replace '%s' within target)
+
 """
 
 
