@@ -27,10 +27,10 @@ Thus Uniform is a bridge for code like structures which allows humans to view an
 
 
 
-## So what is the UNI-FORM?
+## So what is the "uni"-form?
 
 ```python
-    head(VALUE1, VALUE2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
+    __head__(__VALUE1__, VALUE2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
 ```
 
 The entire __Uniform Language__ maps onto recursive applications of the single "uni"-form above.  As you can see the uni-form looks like a standard function call from any procedural language -- it names the function called, a sequence of fixed arguments, followed by a set of keyword argument.  This same uni-form also maps trivially into the JSON object as shown here:
@@ -55,7 +55,7 @@ So the viewer should just remember, in all cases these very different surface fo
 map down to the obvious recursive expression of procedural function calls with fixed and keyord parameters.
 
 
-    -:- First a motivating example showing a number of the alternate surface forms in the uniform language.
+    -:- First a motivating example showing the wide range of alternate surface forms possible in Uniform.
     ::Person
         name := 'Dan Oblinger
 		funky_string := 'like YAML, string do not need back quoting.  even 
@@ -112,8 +112,8 @@ and all three map to the same underlying JSON:
 
 |                    | **PREFIX / INFIX OPERATORS** |
 | ------------------ | ---------------------------- |
-| Format             | __expr__ **OP** __expr__     |
-| Examples           | - some_var <br> x^2+y^2      | 
+| Format             | _expr_ **OP** _expr_     |
+| Examples           | **--** some_var <br> x^2+y^2      | 
 |  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )  |
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
@@ -124,7 +124,7 @@ The Uniform Language includes all of the prefix and infix operators that exist i
 
 |                    | **STATEMENT FORMS**         |                                        |
 | ------------------ | --------------------------- | -------------------------------------- |
-| Format             | __head__ __arg1__ ... **;** |  __head__ __arg1__ ... **{** ... **}** |
+| Format             | _head_ _arg1_ ... **;** |  _head_ _arg1_ ... **{** ... **}** |
 | Examples           | print "Hello World!";       |  while x>0 { x-=1 }                    |
 |  as uni-form       | print("Hello World!")       |  while( '>'(x,0), '-='(x,1) )          |
 |  as a JSON         | {"^":"print", "^1": "'Hello World!"} | while( '>'(x,0), '-='(x,1) )  |
@@ -140,7 +140,7 @@ or it ends with a block form **{** ... **}**.
 | Format            | **{** stmt1 stmt2 ... **}**                              |
 | Alternate form:   | { str = "looks like C code to me!"; print str }          |
 |  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
-|  as a JSON        | {"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } |
+|  as a JSON        | ```{"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } ```|
 
 Blocks are simply sequences of the statement forms as shown above.  Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
 
@@ -165,7 +165,7 @@ Indeed this is the beauty of Uniform:
 (2) Its source form is expressed in the C/Java/Python way that most modern programmers find most natural.
 (3) Its parse form is expressed in JSON -- the simplest, most widespread machine processible representation.
 
-This hat-trick allows Uniform to provide the best of all worlds: the best form for humans, the best form for machine, and a universal, purely-syntacti, bi-directional, lossless mapping which allows programmers to extend and invent new langauge constructs that continue to look good on the human side, continue to be trival to process on the machine side, and does not require them to mess with or alter the parsing/printing infrastructure at all!
+This hat-trick allows Uniform to provide the best of all worlds: the best form for humans, the best form for machine, and a universal, purely-syntactic, bi-directional, lossless mapping which allows programmers to extend and invent new langauge constructs that continue to look good on the human side, continue to be trival to process on the machine side, and does not require them to mess with or alter the parsing/printing infrastructure at all!
 
 The Uniform Langauge brings the advantages of homoiconicity to good old fashion procedural langauges w/o costing any of the readability typically associated with such languages.
 
