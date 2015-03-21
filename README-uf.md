@@ -139,9 +139,8 @@ or it ends with a block form **{** ... **}**.
 | ----------------- | -------------------------------------------------------- |
 | Format            | **{** stmt1 stmt2 ... **}**                              |
 | Alternate form:   | { str = "looks like C code to me!"; print str }          |
-|  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
-|  as a JSON        | ```{"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"},
-                         {"^":"print", "^1":"str"} } ```|
+|  as uni-form      | <code>block( "="(str, "looks like C code to me!"), <br> print(str))</code> |
+|  as a JSON        | ```{"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, <br> {"^":"print", "^1":"str"} } ```|
 
 Blocks are simply sequences of the statement forms as shown above.  Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
 
