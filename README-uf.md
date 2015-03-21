@@ -111,10 +111,10 @@ and all three map to the same underlying JSON:
 <br><br>
 
 |                    | **PREFIX / INFIX OPERATORS** |
-| ------------------ | -------------------------- |
-| Format             | __expr__ **OP** __expr__   |
-| Examples           | - some_var <br> x^2+y^2    | 
-|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )|
+| ------------------ | ---------------------------- |
+| Format             | __expr__ **OP** __expr__     |
+| Examples           | - some_var <br> x^2+y^2      | 
+|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )  |
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
 The Uniform Language includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
@@ -122,41 +122,31 @@ The Uniform Language includes all of the prefix and infix operators that exist i
 <br><br>
 
 
-|                    | **STATEMENT FORMS**         |
-| ------------------ | --------------------------- |
-| format             | __head__ __arg1__ ... **;** |
-| Examples           | print "Hello World!";       |
-|  as uni-form       | print("Hello World!")       |
-|  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
+|                    | **STATEMENT FORMS**         |                                        |
+| ------------------ | --------------------------- | -------------------------------------- |
+| Format             | __head__ __arg1__ ... **;** |  __head__ __arg1__ ... **{** ... **}** |
+| Examples           | print "Hello World!";       |  while x>0 { x-=1 }                    |
+|  as uni-form       | print("Hello World!")       |  while( '>'(x,0), '-='(x,1) )          |
+|  as a JSON         | {"^":"print", "^1": "'Hello World!"} | while( '>'(x,0), '-='(x,1) )  |
 
-A statement is just like a uniform expression except it does not have parens, instead it ends with a semicolon (' **;** ').
+A statement is just like a uniform expression except it does not have parens, instead it ends with a semicolon (' **;** '),
+or it ends with a block form **{** ... **}**.
 
-<BR>
-
-|                    | **STATEMENT FORMS**         |
-| ------------------ | --------------------------- |
-| format             | __head__ __arg1__ ... **{** ... **}** |
-| Examples           | while x>0 { x-=1 }       |
-|  as uni-form       | while( '>'(x,0), '-='(x,1) ) |
-|  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
-
-Or a statement is ended by the FIRST **{** ... **}** form found.
+<BR><br>
 
 
-<br><br>
-
-|  | **BLOCK FORM**    | 
-| Format            | **{** stmt1 stmt2 ... **}** |
-| ----------------- | --------------------- |
-| Alternate form:   | { str = "looks like C code to me!"; print str } |
+|                   | **BLOCK FORM**                                           | 
+| ----------------- | -------------------------------------------------------- |
+| Format            | **{** stmt1 stmt2 ... **}**                              |
+| Alternate form:   | { str = "looks like C code to me!"; print str }          |
 |  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
 |  as a JSON        | {"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } |
 
-Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
+Blocks are simply sequences of the statement forms as shown above.  Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
 
 ```
-def my_fun(x, int y, z=5) {
-	with open("out.txt", mode="r") as x {
+def nonsense_fn(x, int y, z=5) {
+	with open("out.txt", mode:read) as x {
 		x,y = y,x
 	}
 }
@@ -168,7 +158,59 @@ def( nonsense_fn(x, int(y), '='(z, 5)), block(
 		'='( ','(x, y), ','(y,x) )  ))  ))
 ```
 
-As with all uni-forms, this latter form trivially maps to JSON as well, but of course because JSON is such a poor format for code-like structures, we will not force the reader to endure that uninteligable mess.  Still a source-code processing algorithms will have no issue with this JSON, indeed JSON is perhaps the most elegant format for machine processing of source-code structures.
+As with all uni-forms, this latter form trivially maps to JSON as well, of course because JSON is such a poor format for code-like structures, we will not force the reader to endure that uninteligable mess!  Still a source-code processing algorithms will have no issue with this JSON, indeed JSON is perhaps the most elegant format for machine processing of source-code structures.
+
+Indeed this is the beauty of Uniform:
+(1) Its parsing is universal -- it does not depend upon knowing which keywords like 'int' or 'def' are special for your language, its translation is purely syntactic, just as the parsing of homoiconic languages like LISP are purely syntactic.  So it is extensible and self manipulatable as only homoiconic languages can be.
+(2) Its source form is expressed in the C/Java/Python way that most modern programmers find most natural.
+(3) Its parse form is expressed in JSON -- the simplest, most widespread machine processible representation.
+
+This hat-trick allows Uniform to provide the best of all worlds: the best form for humans, the best form for machine, and a universal, purely-syntacti, bi-directional, lossless mapping which allows programmers to extend and invent new langauge constructs that continue to look good on the human side, continue to be trival to process on the machine side, and does not require them to mess with or alter the parsing/printing infrastructure at all!
+
+The Uniform Langauge brings the advantages of homoiconicity to good old fashion procedural langauges w/o costing any of the readability typically associated with such languages.
+
+
+
+
+<br><br>
+
+## Other Uniform extensions
+
+
+|                    | **COLON FORMS**              |
+| ------------------ | ---------------------------- |
+| Formats            | **{:** __key1__ **:=** __val1__ **,:**  ... **:}** <br> **[:** __val1__ **,:** ... **:]** <br> __head__ **(:**  __val1__ **,:** ... **,:** __key_a__ **:=** __val_a__ **,:**  ... **:)** <br> **'** some string |
+| Examples           | {: key:='some value  then:=another(: 'value :) <br> &nbsp; &nbsp; a_list :== [: 'list ,: 'of values :] <br> some_function(: key:= val :)  :}  | 
+|  as uni-form       | object( key: "some value", then: another("value"), a_list: ["list", "of values"] ) |
+
+Uniform is designed to embed one source language into the fields of another.  These colon forms facilitate implicitly terminated strings (the **'** operator) which generally do not require escaping **"** or other syntax, since the colon forms themselves rarely occur within the source code of other languages.  (In those rare exceptional cases, a traditional backslash can still be used.)
+
+
+
+WHITESPACE SENSITIVE BLOCK FORM 
+
+|                  | **WHITESPACE SENSITIVE BLOCK FORM**
+| ---------------- | ---------------------------------------------------------------------------------- |
+| Format           | **::** __head__ <br> &nbsp; &nbsp; &nbsp; &nbsp; ... <br> __key__ **::** __head__ <br>  &nbsp; &nbsp; &nbsp; &nbsp; ... |
+| Examples         | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
+ |   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
+|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
+
+The **::** form is the only whitespace sensitive form in the Uniform language.  This allows creation of deeply structured JSON objects without the nearly-impossible-to-diagnose errors from misaligned closing braces. (Modern editors detect mis-matched braces, but can provide no help if braces are balanced by do not convey the nesting expected by the user.)
+
+
+COLON FORMS
+
+SYMBOL FORM
+
+
+
+
+
+
+
+
+# Appendix B
 
 The careful reader might note some odd translations in the uni-form above, for example ' int(y) ' looks like we are passing y to some function called int.  Of course declaring a variable in any modern procedural language cannot be implemented by passing the variable to the "int-ifier" function.  But that is not the point here 
 
@@ -208,13 +250,6 @@ Certain forms (for example the if-elif-elif-else form requires some post process
 	as a JSON form:       { "java_source": "system.out.println(\"embedded \\\"quotes\\\" and backquotes (\\\\) are a needless pain!\");", 
 
 
-
-##### WHITESPACE SENSITIVE BLOCK FORM 
-
-| Alternate form:  | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
-| ---------------- | ---------------------------------------------------------------------------------- |
-|   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
-|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
 
 
 # OLD
@@ -283,6 +318,18 @@ The uni-form also maps trivially onto the JSON object notation:
 In uniform, values can either be a sub-uniform expression, or a JSON constant value like a string or number.  That's it.  That is the uni-form data structure.
 
 
+----
+
+|                    | **STATEMENT FORMS**         |
+| ------------------ | --------------------------- |
+| Examples           | while x>0 { x-=1 }       |
+|  as uni-form       | while( '>'(x,0), '-='(x,1) ) |
+|  as a JSON         | {"^":"print", "^1": "'Hello World!"} |
+
+Or a statement is ended by the FIRST **{** ... **}** form found.
+
+
+<br><br>
 
 # end
 ---
