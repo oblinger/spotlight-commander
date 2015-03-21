@@ -112,8 +112,8 @@ and all three map to the same underlying JSON:
 
 |                    | **PREFIX / INFIX OPERATORS** |
 | ------------------ | ---------------------------- |
-| Format             | _expr_ **OP** _expr_     |
-| Examples           | **--** some_var <br> x^2+y^2      | 
+| Format             | _expr_ **OP** _expr_         |
+| Examples           | **--** decrement <br> x^2+y^2| 
 |  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )  |
 |  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
 
@@ -140,7 +140,8 @@ or it ends with a block form **{** ... **}**.
 | Format            | **{** stmt1 stmt2 ... **}**                              |
 | Alternate form:   | { str = "looks like C code to me!"; print str }          |
 |  as uni-form      | block( "="(str, "looks like C code to me!"), print(str)) |
-|  as a JSON        | ```{"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"}, {"^":"print", "^1":"str"} } ```|
+|  as a JSON        | ```{"^":"block", "^1": {"^":"=", "^1":"str", "^2":"'looks like C code to me!"},
+                         {"^":"print", "^1":"str"} } ```|
 
 Blocks are simply sequences of the statement forms as shown above.  Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
 
@@ -186,8 +187,6 @@ The Uniform Langauge brings the advantages of homoiconicity to good old fashion 
 Uniform is designed to embed one source language into the fields of another.  These colon forms facilitate implicitly terminated strings (the **'** operator) which generally do not require escaping **"** or other syntax, since the colon forms themselves rarely occur within the source code of other languages.  (In those rare exceptional cases, a traditional backslash can still be used.)
 
 
-
-WHITESPACE SENSITIVE BLOCK FORM 
 
 |                  | **WHITESPACE SENSITIVE BLOCK FORM**
 | ---------------- | ---------------------------------------------------------------------------------- |
