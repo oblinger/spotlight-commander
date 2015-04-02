@@ -155,12 +155,8 @@ constructs that occur in other languages.
 | ----------------- | -------------------------- | ------------------------------------------ | -------------------------------------- |
 | '[' prefix form   |  [1,2,3]                   | **[** _arg1_ **,** _arg2_ **,** ... **]**  | **List**(  _arg1_ , _arg2_ , ... )     |
 | '[' infix form    |  my_array[5]               | _BASE_ **[** _arg1_ **,** ... **]**        | **ref**(   _BASE_ , _arg1_ , ... )     |
-|                   |                            |                                            |                                        |
-|                   |                            |                                            |                                        |
 | '(' prefix form   |  (1, 2, 3)                 | **(** _arg1_ **,** _arg2_ **,** ... **)**  | **Tuple**( _arg1_ , _arg2_ , ... )     |
 | '(' infix form    |  fn(1, 2)                  | _BASE_ **(** _arg1_ **,** ... **)**        | **call**(  _BASE_ , _arg1_ , ... )     |
-|                   |                            |                                            |                                        |
-|                   |                            |                                            |                                        |
 | '{' prefix form   |  {"dan", zipcode:"94110"}  | **{** _arg1_ **,** _arg2_ **,** ... **}**  | **Object**( _arg1_ , _arg2_ , ... )    |
 | '{' infix form    |  if true { print("this") } | ... **{** _arg1_ **,** ... **}**           | **Block**(  _arg1_ , _arg2_ , ... )    |
  
