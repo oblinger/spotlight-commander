@@ -4,35 +4,36 @@
 UNIFORM provides for SOURCE-CODE what <br>
 YAML provides for LISTS:
 </h4>
-A human enjoyable "obvious" syntax <br>
-which maps in to JSON in the obvious way.
+A human enjoyable "obvious" syntax which maps onto JSON in the obvious way.
 
 
 <br><br> 
 
-YAML allows one to quickly implement new information formats that are both easily authored and understood by humans, AND
-easy to machine process. <br>
-In a similar way, UNIFORM allows one to quickly implement new formats that also bridge human authoring/understanding 
-with simple machine processing, but does this bridging for modern source-code-like constructs, not just lists and maps.
+YAML allows one to quickly implement new data formats that are both easily authored and understood by humans, AND
+easy to machine process.  In a similar way, UNIFORM allows one to quickly implement new formal languages that are
+likewise easily authored, understood, and machine processing.
 
 
 
 #### Like YAML, UNIFORM is:
 
-* **LOSSLESS** -- Any source structure printed into Uniform is guaranteed to parse back into a JSON structure 
+* **LOSSLESS** -- Any source structure printed into Uniform is guaranteed to parse back onto a JSON structure 
   EQUAL to its original.
 
-* **BI-DIRECTIONAL** -- Uniform expressions can be mapped losslessly into JSON, and JSON expressions also map losslessly 
-  into Uniform.  (Indeed this bi-directional lossless mapping exists for other commong format list, RDF, Lisp sexprs, etc.)
+* **BI-DIRECTIONAL** -- Uniform expressions map losslessly onto JSON, and conversly JSON expressions also map losslessly 
+  onto Uniform.  (Indeed bi-directional, lossless mappings exists for multiple common formats:  
+  JSON, RDF, Lisp sexprs, etc.)
 
-* **PURELY SYNTACTIC** -- Uniform parses a generic C/Java/Python/Scala-ish language in a purely-syntactic way onto JSON.  
-  (e.g. this means no specialized parsing is required for language special forms like "while", "if", "class", etc.)
+* **PURELY SYNTACTIC** -- Uniform parses a generic C/Java/Python/Scala-ish language in a langauge-independent, 
+  purely-syntactic way onto JSON.  (e.g. this means no specialized parsing is required for language special 
+  forms like "while", "if", "class", etc.)
   
 * **MARKDOWN-ish** -- Like both markdown and YAML, Uniform first priority is to have its constructs optimized to 
 look simple, intuitive, and beautiful in their textual form.
   
-* **OBVIOUS** -- Like YAML, Uniform is "obvious".  By viewing a handful of examples an engineer can infer the JSON
-  mappings for complex uniform source, without need for reference documentation.
+* **OBVIOUS** -- Like YAML, Uniform is "obvious".  By viewing a handful of examples, an engineer already familiar
+  with modern programming languages, can infer the JSON mappings for complex uniform sourcecode, without 
+  need for reference documentation.
 
 * **VARIATIONAL** -- Like YAML, Uniform provides multiple alternate surface forms which the author can use
   to aid readability in specific common cases.
@@ -41,7 +42,7 @@ look simple, intuitive, and beautiful in their textual form.
   optimized for machine processing.
 
 
-Thus Uniform is a bridge for sourcecode-like structures just as YAML is a bridge to data structures.
+Thus Uniform is a generic bridge for source code like, just as YAML is a bridge to data structures.
 
 
 
@@ -50,7 +51,7 @@ Thus Uniform is a bridge for sourcecode-like structures just as YAML is a bridge
 The entire **Uniform Language** is nothing more than recursive applications of this single _"uni"_-form shown here:  
 
 ```python
-    _head_(_VALUE1_, _VALUE2_, ..., key_a: _VALUE_A_, key_b: _VALUE_B_, ...)     
+    head(VALUE_, _VALUE_2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
 ```
 
 As you can see the uni-form looks like a standard function call from any procedural language.
@@ -59,11 +60,11 @@ It has a "head" -- the function being "called", a sequence of fixed arguments, f
 The "uni"-form maps trivially onto JSON as shown here:
 
 ```javascript
-     {'^':'head', '^1':VALUE1, '^2':VALUE2,  'key_a':VALUE_A, 'key_b:VALUE_B}
+     {'^':'head', '^1':VALUE_1, '^2':VALUE_2,  'key_a':VALUE_A, 'key_b:VALUE_B}
 ```
 
-Each value in uniform can either be a sub-"uni"-form expressions, or one of the  JSON constant values:  
-null, true, false, a _string_, or a _number_.  This defines the entire Uniform language!
+Each value in uniform can either be a sub-"uni"-form expressions, a _string_, a _number_, or one of the  
+JSON constants: null, true, false.  This defines the entire Uniform language!
 
 
 
@@ -71,9 +72,9 @@ null, true, false, a _string_, or a _number_.  This defines the entire Uniform l
 
 ## Variational Forms
 
-The _Canonical Form_ for a uniform expression only uses recursive application of the uni-form shown above.  But, 
-like YAML, we include multiple surface forms in order that common forms of information all have
-beautiful and intuitive textual forms.  In considering the example below, keep in mind **_ALL_** of these surface
+The format described above is called _Canonical Form_, and for any Uniform expression there is exactly one canonical form.
+Like YAML, we include multiple surface forms in order that common types of data each have natural and 
+beautiful textual forms.  In considering the example below, keep in mind **_ALL_** of these surface
 forms map losslessly down to Canonical Uniform in the obvious way -- 
 e.g. a recursive uniform expression.
 
@@ -127,9 +128,9 @@ presenting mathematical or execution expressions.  But in all cases, this divers
 sugar providing alternative representations of the underlying singular uni-form, but each alternative is helpful for
 encoding certain common complex source data.  
 
-# But importantly, all of
-# these alternative forms simply aid in human-readability, the
-# resulting data structures are always nothing more than a recursive application of the UNI-form.
+ # But importantly, all of
+ # these alternative forms simply aid in human-readability, the
+ # resulting data structures are always nothing more than a recursive application of the UNI-form.
 
 Appendix A provides a formal specification of Uniform and of each of the
 surface forms shown.  Here we simply demonstrate by example, showing each alternative form,
@@ -149,16 +150,17 @@ constructs that occur in other languages.
  To distinguish between these three brace types in both their prefix and infix format we end up with six variants 
  that all map down onto simple uni-form equivalents:
  
- |                   |   Example Form             | Uniform Variational Form                   |  Canonical Uni-form Equivalent         |
- | ----------------- | -------------------------- | ------------------------------------------ | -------------------------------------- |
- | '[' prefix form   |  [1,2,3]                   | **[** _arg1_ **,** _arg2_ **,** ... **]**  | **List**(  _arg1_ , _arg2_ , ... )     |
- | '[' infix form    |  my_array[5]               | _BASE_ **[** _arg1_ **,** ... **]**        | **ref**(   _BASE_ , _arg1_ , ... )     |
- |                   |                            |                                            |                                        |
- | '(' prefix form   |  (1, 2, 3)                 | **(** _arg1_ **,** _arg2_ **,** ... **)**  | **Tuple**( _arg1_ , _arg2_ , ... )     |
- | '(' infix form    |  fn(1, 2)                  | _BASE_ **(** _arg1_ **,** ... **)**        | **call**(  _BASE_ , _arg1_ , ... )     |
- |                   |                            |                                            |                                        |
- | '{' prefix form   |  {"dan", zipcode:"94110"}  | **{** _arg1_ **,** _arg2_ **,** ... **}**  | **Object**( _arg1_ , _arg2_ , ... )    |
- | '{' infix form    |  if true { print("this") } | ... **{** _arg1_ **,** ... **}**           | **Block**(  _arg1_ , _arg2_ , ... )    |
+ 
+|                   |   Example Form             | Uniform Variational Form                   |  Canonical Uni-form Equivalent         |
+| ----------------- | -------------------------- | ------------------------------------------ | -------------------------------------- |
+| '[' prefix form   |  [1,2,3]                   | **[** _arg1_ **,** _arg2_ **,** ... **]**  | **List**(  _arg1_ , _arg2_ , ... )     |
+| '[' infix form    |  my_array[5]               | _BASE_ **[** _arg1_ **,** ... **]**        | **ref**(   _BASE_ , _arg1_ , ... )     |
+|                   |                            |                                            |                                        |
+| '(' prefix form   |  (1, 2, 3)                 | **(** _arg1_ **,** _arg2_ **,** ... **)**  | **Tuple**( _arg1_ , _arg2_ , ... )     |
+| '(' infix form    |  fn(1, 2)                  | _BASE_ **(** _arg1_ **,** ... **)**        | **call**(  _BASE_ , _arg1_ , ... )     |
+|                   |                            |                                            |                                        |
+| '{' prefix form   |  {"dan", zipcode:"94110"}  | **{** _arg1_ **,** _arg2_ **,** ... **}**  | **Object**( _arg1_ , _arg2_ , ... )    |
+| '{' infix form    |  if true { print("this") } | ... **{** _arg1_ **,** ... **}**           | **Block**(  _arg1_ , _arg2_ , ... )    |
  
  
  Using these patterns, a great diversity in surface forms that all map onto canonical uniform with one of the six
