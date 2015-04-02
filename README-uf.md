@@ -4,89 +4,115 @@
 UNIFORM provides for SOURCE-CODE what <br>
 YAML provides for LISTS:
 </h4>
-
 A human enjoyable "obvious" syntax <br>
-which maps in the obvious way onto JSON.
+which maps in to JSON in the obvious way.
+
+
+<br><br> 
+
+YAML allows one to quickly implement new information formats that are both easily authored and understood by humans, AND
+easy to machine process. <br>
+In a similar way, UNIFORM allows one to quickly implement new formats that also bridge human authoring/understanding 
+with simple machine processing, but does this bridging for modern source-code-like constructs, not just lists and maps.
+
 
 
 #### Like YAML, UNIFORM is:
 
-* **LOSSLESS** -- Any source structure printed into Uniform is guaranteed to parse back into a structure EQUAL to the original.
+* **LOSSLESS** -- Any source structure printed into Uniform is guaranteed to parse back into a JSON structure 
+  EQUAL to its original.
 
-* **PURELY SYNTACTIC** -- Uniform parses a generic C/Java/Python/Scala-ish language in a purely-syntactic way onto JSON.  (e.g. no special parsing is done for speciali forms like "while" or "if")
+* **BI-DIRECTIONAL** -- Uniform expressions can be mapped losslessly into JSON, and JSON expressions also map losslessly 
+  into Uniform.  (Indeed this bi-directional lossless mapping exists for other commong format list, RDF, Lisp sexprs, etc.)
+
+* **PURELY SYNTACTIC** -- Uniform parses a generic C/Java/Python/Scala-ish language in a purely-syntactic way onto JSON.  
+  (e.g. this means no specialized parsing is required for language special forms like "while", "if", "class", etc.)
   
-* **MARKDOWN-ish** -- Like both markdown and YAML, Uniform has constructs optimized to look simple and beautiful in their UNICODE source format.
+* **MARKDOWN-ish** -- Like both markdown and YAML, Uniform first priority is to have its constructs optimized to 
+look simple, intuitive, and beautiful in their textual form.
   
-* **OBVIOUS** -- Like YAML, Uniform is "obvious".  Without reading docs, an engineer can view 'uniform' source then know what it means and what JSON structure it maps to.
+* **OBVIOUS** -- Like YAML, Uniform is "obvious".  By viewing a handful of examples an engineer can infer the JSON
+  mappings for complex uniform source, without need for reference documentation.
 
-* **VARIATIONAL** -- Like YAML, Uniform provides multiple alternate surface forms which aid readability for specific common cases.
+* **VARIATIONAL** -- Like YAML, Uniform provides multiple alternate surface forms which the author can use
+  to aid readability in specific common cases.
 
-* **UNIFORM** -- Like YAML, Uniform maps all that surface variation onto a simple uniform JSON structure which aids in simple machine processing.
+* **UNIFORM** -- Like YAML, Uniform maps all that surface variation into simple underlying data structures 
+  optimized for machine processing.
 
-Thus Uniform is a bridge for code like structures which allows humans to view and edit in format optomized for them, and ALSO allowing machines to process the same structures in a bridged form opotmize for machine processing.
+
+Thus Uniform is a bridge for sourcecode-like structures just as YAML is a bridge to data structures.
 
 
 
 ## So what is the "uni"-form?
 
+The entire **Uniform Language** is nothing more than recursive applications of this single _"uni"_-form shown here:  
+
 ```python
-    __head__(__VALUE1__, VALUE2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
+    _head_(_VALUE1_, _VALUE2_, ..., key_a: _VALUE_A_, key_b: _VALUE_B_, ...)     
 ```
 
-The entire __Uniform Language__ maps onto recursive applications of the single "uni"-form above.  As you can see the uni-form looks like a standard function call from any procedural language -- it names the function called, a sequence of fixed arguments, followed by a set of keyword argument.  This same uni-form also maps trivially into the JSON object as shown here:
+As you can see the uni-form looks like a standard function call from any procedural language.
+It has a "head" -- the function being "called", a sequence of fixed arguments, followed by a set of keyword arguments.  
+
+The "uni"-form maps trivially onto JSON as shown here:
 
 ```javascript
      {'^':'head', '^1':VALUE1, '^2':VALUE2,  'key_a':VALUE_A, 'key_b:VALUE_B}
 ```
 
-In uniform, values can either be a sub-"uni"-form expressions, or one of the  JSON constant values:  null, true, false, __a string__, or __a number__.  This defines the entire Uniform langauge! 
-
-Because Uniform is a slightly simplified verions of JSON, it is trivial to map between them.  Two special head values are used:  'object', and 'list'.  object( ... ) is the "uni"-form for a JSON object that does not have any head ("^") key, and list( ... ) is the "uni"-form representation of a JSON list [ ... ].  
-
+Each value in uniform can either be a sub-"uni"-form expressions, or one of the  JSON constant values:  
+null, true, false, a _string_, or a _number_.  This defines the entire Uniform language!
 
 
 
 
-## Uniform syntax
 
-As described, there are a number of alternate surface forms for the "uni"-form.
-Each of these alternate forms bi-directionally map losslessly onto the "uni"-form itself.
-So the viewer should just remember, in all cases these very different surface forms all
-map down to the obvious recursive expression of procedural function calls with fixed and keyord parameters.
+## Variational Forms
 
+The _Canonical Form_ for a uniform expression only uses recursive application of the uni-form shown above.  But, 
+like YAML, we include multiple surface forms in order that common forms of information all have
+beautiful and intuitive textual forms.  In considering the example below, keep in mind **_ALL_** of these surface
+forms map losslessly down to Canonical Uniform in the obvious way -- 
+e.g. a recursive uniform expression.
 
-    -:- First a motivating example showing the wide range of alternate surface forms possible in Uniform.
+    \# Here is a motivating example showing the wide range of alternate surface forms possible in Uniform.
     ::Person
-        name := 'Dan Oblinger
-		funky_string := 'like YAML, string do not need back quoting.  even 
-		                 multi-line strings with "quotes" and 'quotes' and back quotes \ are just fine.
-        home :: Address '3403 Cesar Chavez   Apt := C                 -:- Indention can be used to indicate the end of an embedded object
-                         City := San Francisco   State := CA   zip := 94110
-        email := 'dan@oblinger.us
-        friends := 'Qingling Ni ,: 'Jack Porter ,: 'Josh Yelon ,:
+        name: 'Dan Oblinger
+        # Indention can be used to indicate the end of an embedded object
+		funky string: 'like YAML, string do not need back quoting.  even 
+		               multi-line strings with "quotes" and 'quotes' and back quotes \ are just fine.
+        home :: Address '3403 Cesar Chavez street
+            Apt  : C            
+            City : San Francisco   
+            State: CA   
+            zip  : 94110
+        email: 'dan@oblinger.us
+        friends: ["Qingling Ni", "Jack Porter", "Josh Yelon",
             ::Person  name:='Inline-defined Person                    -:- Notice this fourth friend is actually an in-line defined object
                       home::Address 1234 inline street address 
-    		                City:=Some City  State:=CA  Zip:=12345
-    
-        theorems::
-            a^2+b^2 == c^2                              -:- This is not a string, it is a recursive uniform code expression with inline operators
+    		            City:Some City  
+    		            State:CA  
+    		            Zip:12345
+        ]
+        good old JSON still works here:
+            {"equation": ["equals", "e", ["times" "m" ["squared", "c"]]]}       -:- Like YAML, Uniform is a superset of JSON
+ 
+         theorems:
+            a**2 + b**2 == c**2                         -:- This is not a string, it is a recursive uniform code expression with inline operators
 			                                            -:- Modern procedural lanaguage differ on which infix operators they include, but all lanaguage agree
 														-:- on the PRECIDENCE between these operators...  so we have just included them ALL in Uniform
     
-        good_old_JSON_still_works_here::
-            {"equation": ["equals", "e", ["times" "m" ["squared", "c"]]]}       -:- Like YAML, Uniform is a superset of JSON
-    
+   
         some_uniform_code::
             def factorial(x) {
-    	        if x<=1 { 
-    	            return 1
-    	        } else { 
-    	            return x * factorial(x-1)
-    	        }
+    	        if x<=1 { return 1; }
+    	        else { return x * factorial(x-1); }
             }
     
-        some_embedded_source_code:: java                -:- Notice here we are embedding the source code of another language 
-                                                        -:- and we do NOT need to add any backquoting !!
+        some_embedded_source_code:: .java          # Notice here we are embedding the source code of another language 
+                                                   # and we do NOT need to add any backquoting !!
     	    import java.lang;
                 package com.my.package;
     	    public static final EmbeddedMethodDefinition(String arg1, int arg2) { 
@@ -95,44 +121,172 @@ map down to the obvious recursive expression of procedural function calls with f
     
     
             
-As you can see from the example above, there are a few alternate
-notations added to the uniform language beyond those found in
-C/Java/Python.  These forms are still just syntactic sugar providing
-alternative representations of the uni-form which are helpful for
-encoding certain complex source material.  But importantly, all of
-these alternative forms simply aid in human-readability, the
-resulting data structures are always nothing more than a recursive application of the UNI-form.
+As you can see from the example above, there are YAML-like alternate
+notation added to Uniform to aid in visually organizing structured or record-like data, and code-like notations for
+presenting mathematical or execution expressions.  But in all cases, this diversity of surface form are just syntactic 
+sugar providing alternative representations of the underlying singular uni-form, but each alternative is helpful for
+encoding certain common complex source data.  
+
+# But importantly, all of
+# these alternative forms simply aid in human-readability, the
+# resulting data structures are always nothing more than a recursive application of the UNI-form.
 
 Appendix A provides a formal specification of Uniform and of each of the
-surface forms shown.  Here we simply demonstrate by example, showing the alternative form,
-followed by its uni-form, and JSON equivelants.  In each case, all threee expressions are __valid uniform__
-and all three map to the same underlying JSON:
+surface forms shown.  Here we simply demonstrate by example, showing each alternative form,
+followed by its uni-form, and JSON equivalents.  In each case, all three expressions are __valid uniform__
+and all three are parsable by Uniform onto the same underlying JSON:
 
-<br><br>
+
+<h4> Brace Forms
+
+The fixed and keyword arguments in the body of the uni-form are flexible enough to capture many non-function call 
+constructs that occur in other languages.  
+ 
+ To enable this we allow the same fixed-arguments / keyword-arguments form inside of all brace pairs,  
+ \{ ... \} and \[ ... \] as we already allow in the uniform \( ... \) pairs, and we allow the head of the uni-form
+ to either be dropped, or to be an entire uniform expression rather than simple a symbol.
+ 
+ To distinguish between these three brace types in both their prefix and infix format we end up with six variants 
+ that all map down onto simple uni-form equivalents:
+ 
+ |                   |   Example Form             | Uniform Variational Form                   |  Canonical Uni-form Equivalent         |
+ | ----------------- | -------------------------- | ------------------------------------------ | -------------------------------------- |
+ | '[' prefix form   |  [1,2,3]                   | **[** _arg1_ **,** _arg2_ **,** ... **]**  | **List**(  _arg1_ , _arg2_ , ... )     |
+ | '[' infix form    |  my_array[5]               | _BASE_ **[** _arg1_ **,** ... **]**        | **ref**(   _BASE_ , _arg1_ , ... )     |
+ |                   |                            |                                            |                                        |
+ | '(' prefix form   |  (1, 2, 3)                 | **(** _arg1_ **,** _arg2_ **,** ... **)**  | **Tuple**( _arg1_ , _arg2_ , ... )     |
+ | '(' infix form    |  fn(1, 2)                  | _BASE_ **(** _arg1_ **,** ... **)**        | **call**(  _BASE_ , _arg1_ , ... )     |
+ |                   |                            |                                            |                                        |
+ | '{' prefix form   |  {"dan", zipcode:"94110"}  | **{** _arg1_ **,** _arg2_ **,** ... **}**  | **Object**( _arg1_ , _arg2_ , ... )    |
+ | '{' infix form    |  if true { print("this") } | ... **{** _arg1_ **,** ... **}**           | **Block**(  _arg1_ , _arg2_ , ... )    |
+ 
+ 
+ Using these patterns, a great diversity in surface forms that all map onto canonical uniform with one of the six
+ special head symbols: List, ref, Tuple, call, Object, and Block.  
+ 
+ Notice that, among many other language constructs, all of JSON just became a subset of Uniform.
+ Further, based on the rules mapping Uniform onto JSON shown above, any JSON expression parsed into Uniform
+ will map back to a JSON expression equal to the original.  (The many mapping guarantees of the Uniform 
+ language are discussed in the Formal Guarantees section.)
+ 
+ 
+
+<h4> Infix forms
+
+Different modern programming languages include different operators with different meanings.  Still alot of the 
+reason why the human viewers find these infix forms so easy to read, is because all of these languages seem
+to follow common **_precedence_** rules for combining these operators.  So '*' binds tighter than '+', which is 
+tighter than '==', then '&&', then '='
+
+Uniform encodes these 'standard' prefix and infix operators, and maps those surface forms onto Uniform in the 
+obvious way.  As an example here is the extended, canonical, and JSON forms for the same expression.  
+All are parsable by Uniform, and all are EQUAL to each other.
+
 
 |                    | **PREFIX / INFIX OPERATORS** |
 | ------------------ | ---------------------------- |
 | Format             | _expr_ **OP** _expr_         |
-| Examples           | **--** decrement <br> x^2+y^2| 
-|  as uni-form       | "+"( "^"(x, 2), "^"(y, 2) )  |
-|  as a JSON         | {"^":"+", "^1": {"^":"^", "^1":"x", "^2":2}, {"^":"^", "^1":"y", "^2":2} } |
-
-The Uniform Language includes all of the prefix and infix operators that exist in Java, C, Python, Ruby, and many from C++.
+| Examples           | **--** decrement <br> x**2 + y**2| 
+|  as uni-form       | "+"( "**"(x, 2), "**"(y, 2) )  |
+|  as a JSON         | {"^":"+", "^1": {"^":"**", "^1":"x", "^2":2}, {"^":"**", "^1":"y", "^2":2} } |
 
 <br><br>
 
 
-|                    | **STATEMENT FORMS**         |                                        |
-| ------------------ | --------------------------- | -------------------------------------- |
-| Format             | _head_ _arg1_ ... **;** |  _head_ _arg1_ ... **{** ... **}** |
-| Examples           | print "Hello World!";       |  while x>0 { x-=1 }                    |
-|  as uni-form       | print("Hello World!")       |  while( '>'(x,0), '-='(x,1) )          |
-|  as a JSON         | {"^":"print", "^1": "'Hello World!"} | while( '>'(x,0), '-='(x,1) )  |
+ <h4> Statement Form
+ 
+ Uniform includes procedure statement-like forms simply by allowing Uniform expressions that do not require 
+ parens, or commas, and instead simply end with a ';' character.  So:   ````print "hello world!" flush:True ;````
+ is valid uniform, and its canonical form is:  ````print("hello world", flush: True)````
+ 
+ In order to avoid parsing ambiguity we only allow statement forms inside of a block form ````{ ... }````,
+ which is natural, since in languages that use braces to denote block, they only allow statements inside those
+ blocks.  As a special cases:
+  - Uniform allows block forms to stand in as the ending of a statement instead of a semi-colon
+  - Uniform allows one to omit the trailing semi-colon at the end of a block.  
+  - And in the case that a Uniform expression, foo(), has no arguments, the parens can be dropped which 
+    yields a bare symbol in the source code.
+  - "#" denotes a comment that extends to the end of the current line.
+    
+ Putting these rules together we see each of these very natural looking statements map in the obvious way 
+ into canonical uniform.
+ 
+ ````
+ # these Uniform statements look like C or Java
+ while x>0 { 
+     print "X is %s" % x; --x 
+ }
+ 
+ # yet they parse in the obvious way into an equivalent canonical Uniform expression:
+ while( "<"(x(), 0), 
+       Block( print( "%"("X is %s", x()) )
+              "--"(x())
+       )
+ )
 
-A statement is just like a uniform expression except it does not have parens, instead it ends with a semicolon (' **;** '),
-or it ends with a block form **{** ... **}**.
+ 
+# Even pretty language-specific constructs are still expressible in Uniform:
+{
+    class MyClass extends (OtherClass, LastClass) {
+    
+        def nonsense_fn(x, int y, z:5) {
+            with open("/tmp/hello.txt", mode: "w+") as: f {
+                f.write("hello world");
+            }
+        }
+    }
+}
+ 
+ # This is the real power of Uniform.
+ # It lets one easily invent ones own specialized language with ones own natural looking specialized constructs, 
+ # all without worrying with syntax or parsers at all!  The underlying JSON is pretty much already in the parsed 
+ # form that one would want to output from a specialized language parser.  No work required!
+ ````
+ 
+ 
+<h4> YAML forms
+ 
+Even with all flexibility afforded by modern programming languages, there is still a place for YAML.
+It allows the expression of static data-structures in a visually compelling form.  
+YAML form allows embedding of arbitrary other syntax without complex and visually disastrous back-quoting, and 
+uses whitespace sensitivity to enable unambiguous nesting over very large structures without any possibility of 
+missing a closing brace, close quote, or having ones indention different than ones nesting.  These kinds of errors
+are the primary reason why direct reading or editing of large JSON structures is hair pulling suicide inducing 
+endevor that humans should never be subjected to.
 
-<BR><br>
+The full YAML language itself can be embedded into Uniform at any point as indicated by the '---' document initiator.
+It either extends to the '...' document terminator, or to a line whose indention is LESS than the beginning of the
+initiator.  Since YAML already maps to JSON and JSON maps to uniform, we know what the uniform expression for these
+YAML inserts will be.  In the case that multiple YAML documents are inserted in a sequence, then that sequence is
+wrapped in as List(...) uniform expression.
+
+The fields of YAML are always strings, yet the value of Uniform is in its ability to parse those strings into recursive
+Uniform expressions.  Thus we add the '::' operator.  Like a YAML document it can encode lists and maps into 
+whitespace sensitive visual structure.  but the difference is that each of its fields are parsed according to the 
+uniform language.  Within a colon-colon form the special (') operator is used to denote a string that does not require
+back-quoting.
+
+ 
+
+
+|                  | **WHITESPACE SENSITIVE BLOCK FORM**
+| ---------------- | ---------------------------------------------------------------------------------- |
+| Format           | **::** __head__ <br> &nbsp; &nbsp; &nbsp; &nbsp; ... <br> __key__ **::** __head__ <br>  &nbsp; &nbsp; &nbsp; &nbsp; ... |
+| Examples         | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
+|   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
+|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
+
+The **::** form is the only whitespace sensitive form in the Uniform language.  This allows creation of deeply structured JSON objects without the nearly-impossible-to-diagnose errors from misaligned closing braces. (Modern editors detect mis-matched braces, but can provide no help if braces are balanced by do not convey the nesting expected by the user.)
+
+
+
+<h4> Extensible Syntax
+
+
+
+----------------------------------
+
+
 
 
 |                   | **BLOCK FORM**                                           | 
@@ -145,11 +299,7 @@ or it ends with a block form **{** ... **}**.
 Blocks are simply sequences of the statement forms as shown above.  Statements and blocks can be put together into complex structures that closely match common procedural idioms.  To show how natural and how flexible the block/statement parsing can be we provide this Uniform example followed by its uni-form equivelant:
 
 ```
-def nonsense_fn(x, int y, z=5) {
-	with open("out.txt", mode:read) as x {
-		x,y = y,x
-	}
-}
+
 ```
 
 ```
@@ -185,16 +335,6 @@ The Uniform Langauge brings the advantages of homoiconicity to good old fashion 
 
 Uniform is designed to embed one source language into the fields of another.  These colon forms facilitate implicitly terminated strings (the **'** operator) which generally do not require escaping **"** or other syntax, since the colon forms themselves rarely occur within the source code of other languages.  (In those rare exceptional cases, a traditional backslash can still be used.)
 
-
-
-|                  | **WHITESPACE SENSITIVE BLOCK FORM**
-| ---------------- | ---------------------------------------------------------------------------------- |
-| Format           | **::** __head__ <br> &nbsp; &nbsp; &nbsp; &nbsp; ... <br> __key__ **::** __head__ <br>  &nbsp; &nbsp; &nbsp; &nbsp; ... |
-| Examples         | ::Person <br> &nbsp; home :: Address 111 Maple lane  zip:=12345                    |
- |   as uni-form:   |    Person( home=Address( "111 Maple lane", zip=12345 ) )                           |
-|   as a JSON:     |    {"^":"Person", "home" : {"^":"Address", "^1":"111 Maple lane",  "zip":12345 } } |
-
-The **::** form is the only whitespace sensitive form in the Uniform language.  This allows creation of deeply structured JSON objects without the nearly-impossible-to-diagnose errors from misaligned closing braces. (Modern editors detect mis-matched braces, but can provide no help if braces are balanced by do not convey the nesting expected by the user.)
 
 
 COLON FORMS
@@ -328,6 +468,13 @@ Or a statement is ended by the FIRST **{** ... **}** form found.
 
 
 <br><br>
+
+#Because Uniform is a slightly simplified verions of JSON, it is trivial to map between them.  
+#Two special head values are used:  'object', and 'list'.  object( ... ) is the "uni"-form for a JSON 
+#object that does not have any head ("^") key, and list( ... ) is the "uni"-form representation of a JSON list [ ... ].  
+
+
+
 
 # end
 ---
