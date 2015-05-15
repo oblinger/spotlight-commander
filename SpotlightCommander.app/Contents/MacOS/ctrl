@@ -522,7 +522,7 @@ def cmd_scan(*roots):
 
 
 def cmd_scrub():
-    if 'y'!=raw_input("### PRESS 'y' RETURN TO REMOVE ALL 'DOC' and 'FOLDER' COMMANDS: "):
+    if 'y'!=raw_input("### PRESS 'y' RETURN TO REMOVE AND REBUILD ALL 'DOC' and 'FOLDER' COMMANDS: "):
         return
     for f in cap_find_all(''):
         cap = cap_get(f)
