@@ -37,7 +37,7 @@ WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'a':'about',    'b':'browser',  'c':'create',   'cp':'copy',          'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
-             'p':'print',    'r':'rescan',   'rm':'remove',  'v':'view',
+             'p':'print',    'rm':'remove',  's':'scan',     'v':'view',
              'x':'execute',  '?':'usage'}
 
 
@@ -50,20 +50,21 @@ USAGE = \
         --dano                                   create's DANO commands
         --debug         name                DEBUGS the execution of named command
     e   --edit          name                EDIT
-    f   --finder        name                captures current finder item
+        --finder        name                captures current finder item
+    f   --folder        dest name           Creates a new FOLDER and 'About ...' link under 'dest'      ('=' will use finder folder)
         --fix                               FIXES previous command
         --install                           INSTALLS special commands
     ls  --list                              performs LS style list of commands
     mv  --move          name newname        MOVES command to new name
-    n   --new           dest name           Creates a NEW folder and 'About ...' link under 'dest'      ('=' will use finder folder)
+    n   --new  ????
     nb  --named-browser name
     nf  --named-finder  name
     p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
         --scrub                             SCRUBS all 'doc' and 'folder' links (--dano and --rebuild will fix if 'About ...' links exist)
     rm  --remove        name                REMOVES command
-        --rescan        folder              scans ALL FOLDERS looking for targets for missing commands  ('=' will use finder folder)
-    s   --set           name type target    CREATE 'name' that links 'typed' 'target'
+    s   --scan          folder              SCAN folders looking for targets for missing commands  ('=' will use finder folder)
+        --set           name type target    CREATE 'name' that links 'typed' 'target'
         --verify                            scans all commands and VERIFIES their targets are valid
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
@@ -241,7 +242,7 @@ def cmd_about():
     file = '%s/%s%s%s' % (folder, MARKER_PREFIX, os.path.basename(folder), MARKER_DEFAULT_EXTENSION)
     with open(file, 'w') as f:
         pass
-    cmd_rescan(file)
+    cmd_scan(file)
 
 
 
@@ -376,6 +377,20 @@ def cmd_fix(name=None):
         cap_set(cap, verbose=True)
 
 
+def cmd_folder():
+    folder = arg(1, prompt='Enter destination folder')
+    if folder=='=':
+        folder = get_finder_path()
+    name   = arg(2, prompt='Enter folder name to create under %r' % folder)
+    new_folder = os.path.join(folder, name)
+    new_about  = "%s/%s%s%s" % (new_folder, MARKER_PREFIX, name, MARKER_DEFAULT_EXTENSION)
+    print "### CREATING %s" % new_about
+    if not os.path.exists(new_folder):
+        os.makedirs(new_folder)
+    os.system('touch "%s"' % (new_about,))
+    cmd_scan(new_about)
+
+
 def cmd_last():
     cap = get_current_link()
     p   = params()
@@ -397,9 +412,9 @@ def cmd_install(reinstall=True):
 
     cap_set({NAME:'CREATE',  ACTION:'command', TARGET:'%s create =' % script,               PROMPT: 'CREATE. Enter "name.template"'},    verbose=True)
     cap_set({NAME:'FIX',     ACTION:'command', TARGET:'%s fix'      % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'FOLDER',  ACTION:'command', TARGET:'%s folder =' % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'ABOUT',   ACTION:'command', TARGET:'%s about'    % script},                verbose=True)
-    cap_set({NAME:'RESCAN',  ACTION:'command', TARGET:'%s rescan =' % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'NEW',     ACTION:'command', TARGET:'%s new ='    % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'SCAN',    ACTION:'command', TARGET:'%s scan ='   % script, IO: 'pinned'},  verbose=True)
 
     cap_set({NAME:'cmdCOPY', ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest: '}, verbose=True)
     cap_set({NAME:'cmdEDIT', ACTION:'command', TARGET:'%s -e %%s' % script, IO: 'pinned',   PROMPT: 'Launcher Edit: '}, verbose=True)
@@ -449,20 +464,6 @@ def cmd_named_finder():
     cmd_finder(user_input('Enter name for link to file selected & clipboarded in Finder'))
 
 
-def cmd_new():
-    folder = arg(1, prompt='Enter destination folder')
-    if folder=='=':
-        folder = get_finder_path()
-    name   = arg(2, prompt='Enter folder name to create under %r' % folder)
-    new_folder = os.path.join(folder, name)
-    new_about  = "%s/%s%s%s" % (new_folder, MARKER_PREFIX, name, MARKER_DEFAULT_EXTENSION)
-    print "### CREATING %s" % new_about
-    if not os.path.exists(new_folder):
-        os.makedirs(new_folder)
-    os.system('touch "%s"' % (new_about,))
-    cmd_rescan(new_about)
-
-
 def cmd_print():
     """Prints folder associated with the specified command."""
     prefix = arg(1)
@@ -501,7 +502,7 @@ def cmd_remove():
         i+=1
 
 
-def cmd_rescan(*roots):
+def cmd_scan(*roots):
     arg1 = arg(1, default=None)
     if len(roots)!=0:
         pass
@@ -531,17 +532,7 @@ def cmd_scrub():
     print;
     cmd_dano()
     print;
-    cmd_rescan()
-
-
-# def cmd_set(ask=True):
-#     last_cmd_name = last_command_name()
-#     cap           = get_current_link()
-#     if ask:
-#         cap[NAME]   = user_input('Command to set', last_cmd_name)
-#         cap[ACTION] = user_input('Command action', cap.get(ACTION, ''))
-#         cap[TARGET] = user_input('Command target', cap.get(TARGET, ''))
-#     cap_set(cap)
+    cmd_scan()
 
 
 def cmd_set():
