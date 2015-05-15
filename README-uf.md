@@ -4,14 +4,14 @@
 UNIFORM provides for SOURCE-CODE what <br>
 YAML provides for LISTS:
 </h4>
-A human enjoyable "obvious" syntax which maps onto JSON in the obvious way.
+A human enjoyable "obvious" format which maps onto JSON an obvious way.
 
 
 <br><br> 
 
 YAML allows one to quickly implement new data formats that are both easily authored and understood by humans, AND
-easy to machine process.  In a similar way, UNIFORM allows one to quickly implement new formal languages that are
-likewise easily authored, understood, and machine processing.
+easy to machine process.  In a similar way, UNIFORM allows one to quickly implement new code-like languages that are
+likewise easily authored, understood, and machine processed.
 
 
 
@@ -38,11 +38,11 @@ look simple, intuitive, and beautiful in their textual form.
 * **VARIATIONAL** -- Like YAML, Uniform provides multiple alternate surface forms which the author can use
   to aid readability in specific common cases.
 
-* **UNIFORM** -- Like YAML, Uniform maps all that surface variation into simple underlying data structures 
-  optimized for machine processing.
+* **UNIFORM** -- Like YAML, Uniform maps all that surface variation onto simple underlying data structures 
+  (JSON) optimized for machine processing.
 
 
-Thus Uniform is a generic bridge for source code like, just as YAML is a bridge to data structures.
+Thus Uniform is a generic bridge to source-code like info, just as YAML is a generic bridge to data-structure like info.
 
 
 

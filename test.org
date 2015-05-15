@@ -1,7 +1,0 @@
-
-* does this 
-** work as org mode?
-   can I hide text?
-** bullet two
-   or is is just a rendering view?
-   

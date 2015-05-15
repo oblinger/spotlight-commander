@@ -20,10 +20,12 @@ import json
 # do this:   installer, move /ob/cmd, add 'icon' to apps
 # -- fix EDITOR thing
 
+MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
+ABOUT_PREFIX_MARKER = 'About '
+ABOUT_DEFAULT_EXTENSION = '.org'
 
-REFERENT_FILE_TYPES = ['.org', '.md', '.gdoc']
 TWO_STEP_FIX_RESET_TIME = 200     # Reset time when the two step reset command revert's back to step 1
-CREATE_JREFS = True   # Controls if 'rescan' will create j-prefix commands for each folder
+CREATE_JREFS = True                                                                           # Controls if 'rescan' will create j-prefix commands for each folder
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 HOME = os.getenv('HOME')
 LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
@@ -36,9 +38,9 @@ PYTHON_LAUNCHER_PREFIX = "#!/usr/bin/env python %s/launcher --launch\n" % APPLET
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
-SHORTCUTS = {'b':'browser',  'c':'create',   'cp':'copy',  'e':'edit',
-             'f':'finder',   'ls':'list',    'mv':'move',  'nb':'named_browser', 'nf':'named_finder',
-             'p':'print',    'rm':'remove',  'v':'view',
+SHORTCUTS = {'a':'about',    'b':'browser',  'c':'create',   'cp':'copy',          'e':'edit',
+             'f':'finder',   'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
+             'p':'print',    'r':'rescan',   'rm':'remove',  'v':'view',
              'x':'execute',  '?':'usage'}
 
 
@@ -48,6 +50,7 @@ USAGE = \
     b   --browser       name                captures current BROWSER url
     c   --create        name type target    CREATE 'name' that links 'typed' 'target'
     cp  --copy          name newname        COPIES command to new name
+        --dano                                   create's DANO commands
         --debug         name                DEBUGS the execution of named command
     e   --edit          name                EDIT
     f   --finder        name                captures current finder item
@@ -60,6 +63,7 @@ USAGE = \
     nf  --named-finder  name
     p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
+        --scrub                             SCRUBS all 'doc' and 'folder' links (--dano and --rebuild will fix if 'About ...' links exist)
     rm  --remove        name                REMOVES command
         --rescan                            scans ALL FOLDERS looking for targets for missing commands
         --verify                            scans all commands and VERIFIES their targets are valid
@@ -70,7 +74,8 @@ USAGE = \
         --scan                              SCANS filesystem looking for named files
         --test
 
- * NOTE: single or double character is a shortcut for the command to its right.
+        * NOTE: single or double character is a shortcut for the command to its right.
+
 
 
   CAP TYPES  (Command Application Types)
@@ -151,6 +156,57 @@ INFO_PLIST_BODY = \
 """
 
 
+
+DANO_FOLDERS = """
+TARGET: /ob
+TARGET: /ob/cmd
+TARGET: /ob/data
+TARGET: /ob-large
+TARGET: /ob/gdrive
+TARGET: /ob/logs
+TARGET: /ob/proj
+TARGET: /ob/topics
+#TARGET: /ob/data/config
+TARGET: /ob/data/disks
+TARGET: /ob/data/install
+#TARGET: /ob/iTerm
+TARGET: /ob/data/mail
+TARGET: /ob/data/music-tiny
+TARGET: /ob/data/MyDesk
+TARGET: /ob/data/Scratch
+TARGET: /ob/data/topics
+TARGET: /ob/data/wallpapers
+TARGET: /ob/proj/bin
+#TARGET: /ob/proj/MyNDA
+
+TARGET: /ob/data/MyDesk
+TARGET: /ob/data/Scratch
+TARGET: /ob/data/sensitive_S1S2.dmg, Sensitive, app
+TARGET: /ob/logs/_archive_bin,  ArchBin
+TARGET: /ob/logs/_archive_proj, ArchProj
+TARGET: /ob/logs/_archive_ref,  ArchRef
+TARGET: /ob/logs/_archive_WP,   ArchWP
+TARGET: /ob/logs/_archive_misc, ArchMisc
+TARGET: /ob/logs/Bought
+TARGET: /ob/logs/External
+TARGET: /ob/logs/Humor
+TARGET: /ob/logs/Ideas
+TARGET: /ob/logs/Letters
+TARGET: /ob/logs/ToBuy
+TARGET: /ob/logs/ToFile
+TARGET: /ob/logs/ToRead
+TARGET: /ob/logs/ToTrash
+TARGET: /ob/logs/WP
+
+TARGET: /Users/oblinger/Google Drive, Gdrive
+TARGET: /, Root
+TARGET: /Users/oblinger
+TARGET: /Users/oblinger/Downloads
+TARGET: /Users/oblinger/Dropbox
+
+"""
+
+
 def main():
     if not os.path.exists('%s/ctrl' % APPLET_FOLDER):
         print "Copy the app into the /Applications folder and re-run."
@@ -181,6 +237,16 @@ def main():
 ################################################################################
 ###  COMMANDS
 
+
+def cmd_about():
+    folder = arg(1, default=None) or get_finder_path()
+    file = '%s/%s%s%s' % (folder, ABOUT_PREFIX_MARKER, os.path.basename(folder), ABOUT_DEFAULT_EXTENSION)
+    with open(file, 'w') as f:
+        pass
+    cmd_rescan(file)
+
+
+
 def cmd_browser(name=None):
     """Import doc link from BROWSER."""
     name = name or arg(1, 'Enter name for URL link')
@@ -205,6 +271,24 @@ def cmd_create():
     target = arg(3, prompt='Cap target', error_string='Target required')
     keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
     cap_set(keys)
+
+
+def cmd_dano(lines=DANO_FOLDERS):
+    z=lines.split('\n')
+    print "RECREATING STANDARD FOLDER LINKS"
+    for line in lines.split('\n'):
+        if line.startswith('TARGET: '):
+            parts = [p.strip() for p in line[8:].split(',')]
+            target = parts[0]
+            if target[0]=='.':                                          # USE CWD TO EXPAND RELATIVE PATHS
+                target = os.path.join(os.getcwd(), target[2:])
+            name = parts[1] if len(parts)>1 else os.path.splitext(os.path.basename(parts[0]))[0]
+            name = '%s%s' % (name[0].capitalize(), name[1:])
+            action = parts[2] if len(parts)>2 else 'folder' if target[0] in ['.', '/'] else None
+            if action:
+                cap_set(dict(name=name, target=target, action=action), verbose=True)
+            if action=='folder':
+                cap_set(dict(name='j%s' % name, target=target, action=action), verbose=True)
 
 
 def cmd_debug():
@@ -242,7 +326,7 @@ def clean_file(path):
 
 def cmd_finder(name=None):
     """Import doc link from FINDER."""
-    target_folder =  get_finder_path()[:-1]   # strip trailing '/'
+    target_folder =  get_finder_path()
     target_file = get_clipboard()
     target = target_folder+'/'+target_file
     name = name or os.path.splitext(target_file)[0]
@@ -295,31 +379,77 @@ def cmd_install(reinstall=True):
     if not os.path.exists(CMD_DIR):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
-    cap_set({NAME:'ll',   ACTION:'command', TARGET:'%s'        % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llb',  ACTION:'command', TARGET:'%s -b'     % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llcp', ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest'}, verbose=True)
-    cap_set({NAME:'llc',  ACTION:'command', TARGET:'%s -c'     % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'lle',  ACTION:'command', TARGET:'%s -e %%s' % script,                 PROMPT: 'Launcher Edit'}, verbose=True)
-    cap_set({NAME:'llf',  ACTION:'command', TARGET:'%s -f'     % script},                verbose=True)
-    cap_set({NAME:'llls', ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'llmv', ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest'}, verbose=True)
-    cap_set({NAME:'llnb', ACTION:'command', TARGET:'%s -nb'    % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llnf', ACTION:'command', TARGET:'%s -nf'    % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'llrm', ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name'}, verbose=True)
-    cap_set({NAME:'llv',  ACTION:'command', TARGET:'%s -v'     % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'COPY', ACTION:'command', TARGET:'%s copy'   % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'FIX',  ACTION:'command', TARGET:'%s fix'    % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'LAST', ACTION:'command', TARGET:'%s last'   % script},                verbose=True)
-    cap_set({NAME:'NEW',  ACTION:'command', TARGET:'%s new'    % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'SET',  ACTION:'command', TARGET:'%s set'    % script, IO: 'console'}, verbose=True)
-    cap_set({NAME:'TWO_STEP_FIX',  ACTION:'command', TARGET:'%s two_step_fix' % script}, verbose=True)
-    cap_set({NAME:'ss',   ACTION:'command', TARGET:'%s ss'     % script, IO: 'console'}, verbose=True)
+
+    cap_set({NAME:'FIX',      ACTION:'command', TARGET:'%s fix'    % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'ABOUT',    ACTION:'command', TARGET:'%s about'  % script},                verbose=True)
+
+    cap_set({NAME:'cmdCOPY',  ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest'}, verbose=True)
+    cap_set({NAME:'cmdEDIT',  ACTION:'command', TARGET:'%s -e %%s' % script, IO: 'pinned',   PROMPT: 'Launcher Edit'}, verbose=True)
+    cap_set({NAME:'cmdLS',    ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'cmdMV',    ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest'}, verbose=True)
+    cap_set({NAME:'cmdRM',    ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name'}, verbose=True)
+
+    # cap_set({NAME:'ll',       ACTION:'command', TARGET:'%s'        % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'llb',      ACTION:'command', TARGET:'%s -b'     % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'llc',      ACTION:'command', TARGET:'%s -c'     % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'llf',      ACTION:'command', TARGET:'%s -f'     % script},                verbose=True)
+    # cap_set({NAME:'llnb',     ACTION:'command', TARGET:'%s -nb'    % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'llnf',     ACTION:'command', TARGET:'%s -nf'    % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'llv',      ACTION:'command', TARGET:'%s -v'     % script, IO: 'pinned'},  verbose=True)
+    #
+    # cap_set({NAME:'COPY', ACTION:'command', TARGET:'%s copy'   % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'LAST', ACTION:'command', TARGET:'%s last'   % script},                verbose=True)
+    # cap_set({NAME:'NEW',  ACTION:'command', TARGET:'%s new'    % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'SET',  ACTION:'command', TARGET:'%s set'    % script, IO: 'console'}, verbose=True)
+    # cap_set({NAME:'TWO_STEP_FIX',  ACTION:'command', TARGET:'%s two_step_fix' % script}, verbose=True)
+    # cap_set({NAME:'ss',   ACTION:'command', TARGET:'%s ss'     % script, IO: 'console'}, verbose=True)
 
 
 def cmd_list():
     prefix = arg(1, default='')
     names = [cap_get(path)[NAME].ljust(18) for path in cap_find_all(prefix)]
     print 'COMMANDS:\n%s\n\n' % textwrap.fill('  '.join(names),80)
+
+# def cmd_list():
+#     lst = cap_find_all('')
+#     for f in lst:
+#         cap = cap_get(f)
+#         name = cap.get('name').capitalize()
+#         target = cap.get('target')
+#         t_parent = os.path.basename(os.path.dirname(target))
+#         t_base = os.path.splitext(os.path.basename(target))[0]
+#         t_ext = os.path.splitext(target)[1]
+#         action = cap.get('action')
+#         if action in ['doc']:
+#             if not is_cmd_marker_fileXXX(target):
+#                 new_name = os.path.splitext(os.path.basename(target))[0]
+#                 new_name = new_name[1:] if new_name[0]=='_' else new_name
+#                 new_name = 'a%s%s' % (new_name[0].capitalize(), new_name[1:])
+#                 new_target = os.path.join(os.path.dirname(target), 'About %s%s' % (new_name[1:], os.path.splitext(target)[1]))
+#                 # new_cap = dict(cap)
+#                 # new_cap['target'] = new_target
+#                 # new_cap['name'] = new_name
+#                 # cap_set(new_cap, verbose=True)
+#                 if '_'+t_parent==t_base or t_parent.lower()=='flat':
+#                     print ">>>>>> SKIPPING %s %s" % (name, target)
+#                     # new_name = os.path.dirname(target) + '/_' + os.path.basename(target)
+#                     # print "DASH IT %s | %s ==> %s" % (name, target, new_name)
+#                 elif name.lower().startswith('doc'):
+#                     print '>>>> IGNORING %s -> %s' % (name, target)
+#                 elif os.path.splitext(target)[1]=='.org':
+#                     print 'CVT %s ==> %s' % (target, new_target)
+#                     # os.system('mv "%s" "%s"' % (target, new_target))
+#                     # cap_delete(cap)
+#                 elif t_ext in ['.org', '.docx', '.pptx', '.txt', '.one']:
+#                     x =  '%s.org' % os.path.splitext(os.path.basename(new_target))[0]
+#                     print 'TOUCH %s   #original=%s  %s' % (x, target, cap.get('name'))
+#                     #os.system('touch "%s"' % x)
+#             pass
+#         elif action in ['app', 'url', 'folder', 'nstr', 'sh', 'command', 'script', 'python']:
+#             pass
+#         else:
+#             print "CAP %r"  % cap
+
 
 
 def cmd_move():
@@ -375,22 +505,38 @@ def cmd_rebuild():
 
 
 def cmd_remove():
-    name =  arg(1, prompt='Enter name of command to remove')
-    path  =  cap_find_one(name, require_valid_cap=False)
-    print '### Deleting CAP "%s"' % path
-    os.system('rm -r "%s"' % path)
+    i=1
+    while True:
+        name = arg(i,default=None)
+        if not name and i==1:
+            name = arg(1, prompt='Enter name of command to remove')
+        if not name:
+            break
+        path  =  cap_find_one(name, require_valid_cap=False)               # Would be nice to trap error
+        print '### Deleting CAP "%s"' % path
+        os.system('rm -r "%s"' % path)
+        i+=1
 
 
-def cmd_rescan(roots=RESCAN_ROOTS):
-    print "### SCANNING FOLDERS UNDER %s FOR TARGETS FOR NEW COMMANDS" % ', '.join(roots)
+def cmd_rescan(*roots):
+    if len(roots)==0:
+        roots = ( [arg(1)] if arg(1, default=None) else RESCAN_ROOTS )
+    print "### SCANNING FOLDERS UNDER, %s, FOR 'About ...' TARGETS" % ', '.join(roots)
     for root in roots:
-        for f in recursive_file_gen(root):
-            name,jtarget = get_named_referent(f)
-            if name:
-                cap  = cap_get_by_name(name, default=None)
-                if not cap or cap[TARGET]!=f:
-                    print '### New FILE   link: %r to %r' % (name, f)
-                    cap_set({NAME:name, ACTION:'doc', TARGET:f})
+        if is_cmd_marker_file(root):
+            update_cmds_for_about_target(root)
+        else:
+            for f in recursive_file_gen(root):
+                update_cmds_for_about_target(f)
+
+
+def cmd_scrub():
+    raw_input("### HIT RETURN TO REMOVE ALL 'DOC' and 'FOLDER' COMMANDS")
+    for f in cap_find_all(''):
+        cap = cap_get(f)
+        if cap[ACTION] in ['doc', 'folder']:
+            print "### DELETING %s --> %s" % (cap[NAME], cap[TARGET])
+            cap_delete(cap)
 
 
 def cmd_set(ask=True):
@@ -579,7 +725,7 @@ def cap_get(path):
                 print('WARNING: Illegal action %r in %s' % (keys.get(ACTION), keys.get(NAME)))
             return keys
     except:
-        print "WARNING: Failure during reading application command configuaration"
+        print "WARNING: Failure caught during parse of command config file: %r" % path
         print traceback.format_exc()
         return None
     return None
@@ -620,7 +766,7 @@ def cap_find_all(prefix, folder=CMD_DIR, require_valid_cap=True):
 
 def cap_set(cap, **kwargs):
     verbose = kwargs.get('verbose', True)
-    if verbose: print "### Creating Cmd '%s' as a '%s' launcher..." % (cap[NAME], cap[ACTION])
+    if verbose: print "### Creating Cmd '%s' as a '%s' launcher for '%s'" % (cap[NAME], cap[ACTION], cap[TARGET])
     if not FOLDER in cap:  cap[FOLDER]=CMD_DIR
     if cap[ACTION] not in ACTIONS:
         error('Action %r must be one of: %s' % (cap[ACTION], ', '.join(ACTIONS)))
@@ -647,12 +793,13 @@ def cap_set_jcap(cap, verbose):
     """adds the shadow 'j...' command each time the main command is updated."""
     if cap[ACTION] != 'doc' or not CREATE_JREFS:
         return
-    name,jtarget = get_named_referent(cap[TARGET])
-    if jtarget:
-        jname = 'j%s' % name.lower()
-        if verbose:
-            print '### FOLDER link: %r to %r' % (jname, jtarget)
-            cap_set({NAME:jname, ACTION:'folder', TARGET:jtarget})
+    folder = os.path.dirname(cap[TARGET])
+    jname = cap[NAME]
+    jname = 'j%s' % (jname[1:] if jname[0]=='a' else jname)
+    if verbose:
+        print '### FOLDER link: %r to %r' % (jname, folder)
+    cap_set({NAME:jname, ACTION:'folder', TARGET:folder}, verbose=False)
+
 
 def cap_delete(cap):
     """Deletes a cap entry."""
@@ -675,7 +822,7 @@ def cap_path(cap):
 
 def cap_to_str(cap):
     """Returns string summary of a cap's parameters."""
-    return 'N:%s  A:%s  T:%s' % (cap[NAME], cap[ACTION], cap[TARGET])
+    return 'N: %s  A: %s  T: %s' % (cap[NAME].ljust(25), cap[ACTION].ljust(10), cap[TARGET])
 
 DESC_FORMATS = {'doc':'open document %r', 'folder': 'open folder %r', 'app':'launch app %r'}
 
@@ -693,28 +840,39 @@ def cap_desc(cap, max_len=74):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
-def get_named_referent(f):
-    """Returns referent name of f if it is a standard referent file.
-    If the referent is also a FOLDER referent, then the path to that folder is also returned as a second arg """
-    nsplit = os.path.splitext(os.path.basename(f))
-    if nsplit[1] not in REFERENT_FILE_TYPES:
-        return None, None
-    parent_path = os.path.dirname(f)
-    parent = os.path.basename(parent_path)
-    psplit = os.path.splitext(parent)
 
-    pbase = psplit[0].lower().replace(' ','').lstrip('0123456789_-.')
-    nbase = nsplit[0].lower().replace(' ','').lstrip('0123456789_-.')
+def is_cmd_marker_file(f):
+    base = os.path.basename(f)
+    folder = os.path.dirname(f)
+    parent = os.path.basename(folder)
+    exts   = os.path.splitext(base)
+    return base.startswith(ABOUT_PREFIX_MARKER) or \
+           (exts[0].lower()== parent.lower() and exts in MARKER_FILE_TYPES)
 
-    if nbase in ['readme', 'changelog', 'history']:
-        return None, None                               # Ignore these files
-    elif (len(nbase)>=3 and pbase==nbase) or \
-         (len(nbase)>=6 and pbase.endswith(nbase)):
-        return nbase, parent_path                       # Return folder reference
-    elif nsplit[0][0:1]=='_':
-        return nbase, None                              # Return file reference
-    else:
-        return None, None                               # Return no reference at all
+
+def update_cmds_for_about_target(f):
+    if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
+        return
+    folder = os.path.dirname(f)
+    name = os.path.splitext(os.path.basename(f))[0]
+    if name.startswith(ABOUT_PREFIX_MARKER): name = name[len(ABOUT_PREFIX_MARKER):]
+    name = '%s%s' % (name[0].capitalize(), name[1:])
+
+    ## SCAN FOR AND ADD BASE CMD LINK
+    targets = []
+    for suffix in os.listdir(folder):
+        if os.path.splitext(suffix)[0].lower() == name.lower():
+            targets.append(os.path.join(folder, suffix))
+    if len(targets)==1:
+        cap = dict(action='doc', name=name, target=targets[0])
+        cap_set(cap, verbose=True)
+
+    ## ADD 'aXxxx' cmd for 'About ...' files
+    if os.path.basename(f).startswith(ABOUT_PREFIX_MARKER):
+        a_cap = dict(action='doc', name='a%s' % name, target=f)
+        cap_set(a_cap, verbose=True)
+
+
 
 def infer_action(target, **kwargs):
     err = kwargs.get('error', True)
@@ -826,7 +984,7 @@ def arg(num, **kwargs):
         value = raw_input(prompt+': ')
         if value.strip() != '':
             return value
-    if 'default_value' in kwargs:
+    if 'default' in kwargs:
         return default_value
     error(error_string)
 
@@ -873,11 +1031,13 @@ def get_finder_selection_path():
     NOTE: Implementation is a bit of a hack.  command-C is sent to the current currnet app
     and the clipboard is read."""
     send_keys('c', 'command down')
-    return get_finder_path() + get_clipboard()
+    return os.path.join(get_finder_path(), get_clipboard())
 
 def get_finder_path():
     """Returns path to folder in the top finder window"""
-    return osa_fn('tell application "Finder" to return POSIX path of ((folder of the front window) as text)')
+    path = osa_fn('tell application "Finder" to return POSIX path of ((folder of the front window) as text)')
+    if path[-1]=='/': path = path[:-1] # Remove trailing '/'
+    return path
 
 def get_chrome_url():
     """Returns URL in top tab of chrome browser"""
@@ -948,5 +1108,7 @@ def system_to_str(*arglist):
 
 
 
-
+#cmd_list()
+#cmd_rescan('/ob') #'/ob/topics/Life')
+#cmd_dano(DANO_FOLDERS)
 main()
