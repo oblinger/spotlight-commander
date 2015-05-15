@@ -4,10 +4,15 @@ document in progress.....
 
 # About
 
-SPOTLIGHT COMMANDER continuously updates thousands spotlight aliases for specific documents, folders, and web pages.
+Why are YOU trying to remember the exact locations for the thousands of documents, folders, and web pages you use daily?
+Why isn't your COMPUTER doing the remembering of what YOU call those things, so you do have to do any remembering?
 
-Instead of YOU remembering what each thing is called as where it is, 
-why isn't your COMPUTER remembering what you call each thing, so you do have to?
+
+SPOTLIGHT COMMANDER continuously updates aliases for the thousands of documents, folders, and web pages you use everyday.
+
+As you use it, it learns the evolving names in YOUR head for each thing you use, so as soon as you think of a thing
+it has it for you with the sub-conscious ease of touch typing the word already in your head when you think of it.
+
 
 
 # Installation
