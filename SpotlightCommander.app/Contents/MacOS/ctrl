@@ -9,6 +9,8 @@ import textwrap
 import time
 import json
 
+# create ~/templates  cmd -t --template (folder w. '=')  template  foo.templatename   or just templatename
+
 # Use sym link for .icns file
 # current_link should check if file is document or folder and set action
 # -- fix EDITOR thing
@@ -16,15 +18,16 @@ import json
 
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
-ABOUT_PREFIX_MARKER = 'About '
-ABOUT_DEFAULT_EXTENSION = '.org'
+MARKER_PREFIX = 'About '
+MARKER_DEFAULT_EXTENSION = '.org'
 
-TWO_STEP_FIX_RESET_TIME = 200     # Reset time when the two step reset command revert's back to step 1
-CREATE_JREFS = True                                       # Controls if 'rescan' will create j-prefix commands for each folder
+TWO_STEP_FIX_RESET_TIME = 200                           # Reset time when the two step reset command revert's back to step 1
+CREATE_JREFS = True                                     # Controls if 'rescan' will create j-prefix commands for each folder
 HOME = os.getenv('HOME')
 LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
 PARAMS_FILE = '%s/.spot_cmdr_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
+TEMPLATES_DIR = '%s/templates' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
 #EDITOR = '/Applications/TextMate.app/Contents/SharedSupport/Support/bin/mate'
 APPLET_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
@@ -42,7 +45,7 @@ USAGE = \
 """
     *     COMMAND
     b   --browser       name                captures current BROWSER url
-    c   --create        name type target    CREATE 'name' that links 'typed' 'target'
+    c   --create        dest name.template  CREATES 'name' in 'dest' folder using 'template'            ('=' for finder's folder as dest)
     cp  --copy          name newname        COPIES command to new name
         --dano                                   create's DANO commands
         --debug         name                DEBUGS the execution of named command
@@ -52,14 +55,15 @@ USAGE = \
         --install                           INSTALLS special commands
     ls  --list                              performs LS style list of commands
     mv  --move          name newname        MOVES command to new name
-        --new           name                Creates a NEW command (with no action)
+    n   --new           dest name           Creates a NEW folder and 'About ...' link under 'dest'      ('=' will use finder folder)
     nb  --named-browser name
     nf  --named-finder  name
     p   --print         name                PRINTS the folder associated w. 'name'
         --rebuild                           scans all commands and REBUILDS them
         --scrub                             SCRUBS all 'doc' and 'folder' links (--dano and --rebuild will fix if 'About ...' links exist)
     rm  --remove        name                REMOVES command
-        --rescan                            scans ALL FOLDERS looking for targets for missing commands
+        --rescan        folder              scans ALL FOLDERS looking for targets for missing commands  ('=' will use finder folder)
+    s   --set           name type target    CREATE 'name' that links 'typed' 'target'
         --verify                            scans all commands and VERIFIES their targets are valid
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
@@ -78,10 +82,8 @@ USAGE = \
     doc          opens 'target' as a DOCument
     folder       opens 'target' as a FOLDER
     none         no action taken
-    python       executes entire 'applet' file as a python script.
     script       executes entire 'applet' files as a script.
-                 'target' specifies either the 'python' or 'sh' interpreter
-    sh           executes entire 'applet' file using the /bin/sh interpreter
+                 'target' specifies the 'python', 'ruby', or 'sh' interpreter
     url          opens 'target' as a URL using a web browser
     nstr         opens name in notester
 
@@ -197,6 +199,8 @@ TARGET: /, Root
 TARGET: /Users/oblinger
 TARGET: /Users/oblinger/Downloads
 TARGET: /Users/oblinger/Dropbox
+TARGET: /Users/oblinger/templates
+
 
 """
 
@@ -234,7 +238,7 @@ def main():
 
 def cmd_about():
     folder = arg(1, default=None) or get_finder_path()
-    file = '%s/%s%s%s' % (folder, ABOUT_PREFIX_MARKER, os.path.basename(folder), ABOUT_DEFAULT_EXTENSION)
+    file = '%s/%s%s%s' % (folder, MARKER_PREFIX, os.path.basename(folder), MARKER_DEFAULT_EXTENSION)
     with open(file, 'w') as f:
         pass
     cmd_rescan(file)
@@ -259,12 +263,23 @@ def cmd_copy():
 
 
 def cmd_create():
-    """Creates a new cmd app"""
-    name   = arg(1, prompt='Name of cap to create', error_string='Name required.')
-    action = arg(2, prompt='Cap action (%s)' % ', '.join(ACTIONS), error_string='Action required.')
-    target = arg(3, prompt='Cap target', error_string='Target required')
-    keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
-    cap_set(keys)
+    dest_folder = arg(1, prompt='Enter destination folder')
+    if dest_folder=='=':
+        dest_folder = get_finder_path()
+    #pattern = user_input('Enter name.template to create file from template')
+    pattern = arg(2, prompt='Enter name.template to create file from template')
+    parts = pattern.split('.')
+    if len(parts)>1:
+        f_name,t_name = parts[0],parts[1]
+    else:
+        f_name, t_name = 'blank',parts[0]
+    for suffix in os.listdir(TEMPLATES_DIR):
+        if suffix.lower().startswith(t_name+'.'):
+            dest = '%s%s' % (f_name, os.path.splitext(suffix)[1])
+            os.system('cp "%s/%s" "%s"' % (TEMPLATES_DIR, suffix, dest_folder))
+            os.system('cd "%s" ; mv "%s" "%s"' % (dest_folder, os.path.basename(suffix), dest))
+            return
+    error('Could not find template named %r' % t_name)
 
 
 def cmd_dano(lines=DANO_FOLDERS):
@@ -380,14 +395,17 @@ def cmd_install(reinstall=True):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
 
-    cap_set({NAME:'FIX',      ACTION:'command', TARGET:'%s fix'    % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'ABOUT',    ACTION:'command', TARGET:'%s about'  % script},                verbose=True)
+    cap_set({NAME:'CREATE',  ACTION:'command', TARGET:'%s create =' % script,               PROMPT: 'CREATE. Enter "name.template"'},    verbose=True)
+    cap_set({NAME:'FIX',     ACTION:'command', TARGET:'%s fix'      % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'ABOUT',   ACTION:'command', TARGET:'%s about'    % script},                verbose=True)
+    cap_set({NAME:'RESCAN',  ACTION:'command', TARGET:'%s rescan =' % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'NEW',     ACTION:'command', TARGET:'%s new ='    % script, IO: 'pinned'},  verbose=True)
 
-    cap_set({NAME:'cmdCOPY',  ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest'}, verbose=True)
-    cap_set({NAME:'cmdEDIT',  ACTION:'command', TARGET:'%s -e %%s' % script, IO: 'pinned',   PROMPT: 'Launcher Edit'}, verbose=True)
-    cap_set({NAME:'cmdLS',    ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'cmdMV',    ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest'}, verbose=True)
-    cap_set({NAME:'cmdRM',    ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name'}, verbose=True)
+    cap_set({NAME:'cmdCOPY', ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest: '}, verbose=True)
+    cap_set({NAME:'cmdEDIT', ACTION:'command', TARGET:'%s -e %%s' % script, IO: 'pinned',   PROMPT: 'Launcher Edit: '}, verbose=True)
+    cap_set({NAME:'cmdLS',   ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'cmdMV',   ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest: '}, verbose=True)
+    cap_set({NAME:'cmdRM',   ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name: '}, verbose=True)
 
     # cap_set({NAME:'ll',       ACTION:'command', TARGET:'%s'        % script, IO: 'console'}, verbose=True)
     # cap_set({NAME:'llb',      ACTION:'command', TARGET:'%s -b'     % script, IO: 'console'}, verbose=True)
@@ -432,11 +450,17 @@ def cmd_named_finder():
 
 
 def cmd_new():
-    name = arg(1, prompt='Enter name of new (empty) command.')
-    caps = cap_find_all(name+'.')
-    if len(caps)==0:
-        cap_set({NAME:name, ACTION:'none', TARGET:'none'})
-        cmd_execute(name)
+    folder = arg(1, prompt='Enter destination folder')
+    if folder=='=':
+        folder = get_finder_path()
+    name   = arg(2, prompt='Enter folder name to create under %r' % folder)
+    new_folder = os.path.join(folder, name)
+    new_about  = "%s/%s%s%s" % (new_folder, MARKER_PREFIX, name, MARKER_DEFAULT_EXTENSION)
+    print "### CREATING %s" % new_about
+    if not os.path.exists(new_folder):
+        os.makedirs(new_folder)
+    os.system('touch "%s"' % (new_about,))
+    cmd_rescan(new_about)
 
 
 def cmd_print():
@@ -478,8 +502,15 @@ def cmd_remove():
 
 
 def cmd_rescan(*roots):
-    if len(roots)==0:
-        roots = ( [arg(1)] if arg(1, default=None) else RESCAN_ROOTS )
+    arg1 = arg(1, default=None)
+    if len(roots)!=0:
+        pass
+    elif arg1==None:
+        roots = RESCAN_ROOTS
+    elif arg1=='=':
+        roots = [get_finder_path()]
+    else:
+        roots = [arg1]
     print "### SCANNING FOLDERS UNDER, %s, FOR 'About ...' TARGETS" % ', '.join(roots)
     for root in roots:
         if is_cmd_marker_file(root):
@@ -503,14 +534,23 @@ def cmd_scrub():
     cmd_rescan()
 
 
-def cmd_set(ask=True):
-    last_cmd_name = last_command_name()
-    cap           = get_current_link()
-    if ask:
-        cap[NAME]   = user_input('Command to set', last_cmd_name)
-        cap[ACTION] = user_input('Command action', cap.get(ACTION, ''))
-        cap[TARGET] = user_input('Command target', cap.get(TARGET, ''))
-    cap_set(cap)
+# def cmd_set(ask=True):
+#     last_cmd_name = last_command_name()
+#     cap           = get_current_link()
+#     if ask:
+#         cap[NAME]   = user_input('Command to set', last_cmd_name)
+#         cap[ACTION] = user_input('Command action', cap.get(ACTION, ''))
+#         cap[TARGET] = user_input('Command target', cap.get(TARGET, ''))
+#     cap_set(cap)
+
+
+def cmd_set():
+    """Sets a cmd based on name action and target"""
+    name   = arg(1, prompt='Name of cap to create', error_string='Name required.')
+    action = arg(2, prompt='Cap action (%s)' % ', '.join(ACTIONS), error_string='Action required.')
+    target = arg(3, prompt='Cap target', error_string='Target required')
+    keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
+    cap_set(keys)
 
 
 # BUG what about when there is no last command or curr cap???
@@ -808,12 +848,11 @@ def cap_desc(cap, max_len=74):
 
 
 def is_cmd_marker_file(f):
-    base = os.path.basename(f)
     folder = os.path.dirname(f)
     parent = os.path.basename(folder)
-    exts   = os.path.splitext(base)
-    return base.startswith(ABOUT_PREFIX_MARKER) or \
-           (exts[0].lower()== parent.lower() and exts in MARKER_FILE_TYPES)
+    parts   = os.path.splitext(os.path.basename(f))
+    return parts[0].startswith(MARKER_PREFIX) or \
+           (parts[0].lower()== parent.lower() and parts[1] in MARKER_FILE_TYPES)
 
 
 def update_cmds_for_about_target(f):
@@ -821,7 +860,7 @@ def update_cmds_for_about_target(f):
         return
     folder = os.path.dirname(f)
     name = os.path.splitext(os.path.basename(f))[0]
-    if name.startswith(ABOUT_PREFIX_MARKER): name = name[len(ABOUT_PREFIX_MARKER):]
+    if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
     name = '%s%s' % (name[0].capitalize(), name[1:])
 
     ## SCAN FOR AND ADD BASE CMD LINK
@@ -834,7 +873,7 @@ def update_cmds_for_about_target(f):
         cap_set(cap, verbose=True)
 
     ## ADD 'aXxxx' cmd for 'About ...' files
-    if os.path.basename(f).startswith(ABOUT_PREFIX_MARKER):
+    if os.path.basename(f).startswith(MARKER_PREFIX):
         a_cap = dict(action='doc', name='a%s' % name, target=f)
         cap_set(a_cap, verbose=True)
 
@@ -1073,8 +1112,5 @@ def system_to_str(*arglist):
     return stdout.rstrip()
 
 
-
-#cmd_list()
-#cmd_rescan('/ob') #'/ob/topics/Life')
-#cmd_dano(DANO_FOLDERS)
+#cmd_rescan('/ob/proj/EOC') #'/ob/topics/Life')
 main()
