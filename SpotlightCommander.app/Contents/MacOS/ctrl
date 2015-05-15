@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-# AUTHOR:  Dan Oblinger  <code@oblinger.us>
-# CREATE:  2015-01-10
-# MODULE:
-
-
+# (C) Copyright 2014- Dan Oblinger  <code@oblinger.us>
 
 import re
 import os
@@ -14,30 +10,28 @@ import time
 import json
 
 # Use sym link for .icns file
-# cmd_fix
-# 'SS' commnand should be reworked (remove prev, allow setting action w. current?)
 # current_link should check if file is document or folder and set action
-# do this:   installer, move /ob/cmd, add 'icon' to apps
 # -- fix EDITOR thing
 
+
+RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
 MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
 ABOUT_PREFIX_MARKER = 'About '
 ABOUT_DEFAULT_EXTENSION = '.org'
 
 TWO_STEP_FIX_RESET_TIME = 200     # Reset time when the two step reset command revert's back to step 1
-CREATE_JREFS = True                                                                           # Controls if 'rescan' will create j-prefix commands for each folder
-RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
+CREATE_JREFS = True                                       # Controls if 'rescan' will create j-prefix commands for each folder
 HOME = os.getenv('HOME')
 LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
 PARAMS_FILE = '%s/.spot_cmdr_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
 EDITOR = os.getenv('EDITOR', 'open -e')
-#EDITOR = '/Applications/TextMate.app/Contents/SharedSupport/Support/bin/mate'  # todo: FIX THIS
+#EDITOR = '/Applications/TextMate.app/Contents/SharedSupport/Support/bin/mate'
 APPLET_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
 PYTHON_LAUNCHER_PREFIX = "#!/usr/bin/env python %s/launcher --launch\n" % APPLET_FOLDER
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
-ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'python', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
+ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'a':'about',    'b':'browser',  'c':'create',   'cp':'copy',          'e':'edit',
              'f':'finder',   'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
              'p':'print',    'r':'rescan',   'rm':'remove',  'v':'view',
@@ -249,7 +243,7 @@ def cmd_about():
 
 def cmd_browser(name=None):
     """Import doc link from BROWSER."""
-    name = name or arg(1, 'Enter name for URL link')
+    name = name or arg(1, prompt='Enter name for URL link')
     if not name: error('No name specified.')
     url = get_chrome_url()
     cap_set({NAME:name, ACTION:'url', TARGET:url})
@@ -343,19 +337,25 @@ def cmd_fix(name=None):
     print "FIX THE %r COMMAND" % cap[NAME].upper()
     print "- PRESS RETURN to accept new target below"
     print "- PASTE a url or path to fix to a different target"
-    print "- ADD 'xxx=' to change the command being updated to be 'xxx'"
+    print "- ADD 'nnn=' to change the NAME of the command being updated"
+    print "- USE 'nnn=aaa tttt' to specify everything: the NAME, ACTION, and TARGET"
     print ""
     print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
     input = user_input('SET %r [Y/n]' % cap[NAME])
     if input=='n':
         return
-    if '=' in input:
+    if '=' in input:                    # Handle '=' prefix
         idx = input.index('=')
         cap[NAME]=input[:idx].strip()
         input = input[idx+1:].strip()
+    word = input[0:input.index(' ')].lower() if ' ' in input else None
+    if word and word in ACTIONS:        # Handle action prefix
+        cap[ACTION] = word
+        input = input[len(word):].lstrip()
+    else:
+        cap[ACTION] = infer_action(input, error=False)
     if input!='' and input!='y':
         cap[TARGET]=input
-        cap[ACTION]=infer_action(input, error=False)
     if cap.get(ACTION):
         print("CMD: %s" % cap_to_str(cap))
         cap_set(cap, verbose=True)
@@ -409,47 +409,6 @@ def cmd_list():
     prefix = arg(1, default='')
     names = [cap_get(path)[NAME].ljust(18) for path in cap_find_all(prefix)]
     print 'COMMANDS:\n%s\n\n' % textwrap.fill('  '.join(names),80)
-
-# def cmd_list():
-#     lst = cap_find_all('')
-#     for f in lst:
-#         cap = cap_get(f)
-#         name = cap.get('name').capitalize()
-#         target = cap.get('target')
-#         t_parent = os.path.basename(os.path.dirname(target))
-#         t_base = os.path.splitext(os.path.basename(target))[0]
-#         t_ext = os.path.splitext(target)[1]
-#         action = cap.get('action')
-#         if action in ['doc']:
-#             if not is_cmd_marker_fileXXX(target):
-#                 new_name = os.path.splitext(os.path.basename(target))[0]
-#                 new_name = new_name[1:] if new_name[0]=='_' else new_name
-#                 new_name = 'a%s%s' % (new_name[0].capitalize(), new_name[1:])
-#                 new_target = os.path.join(os.path.dirname(target), 'About %s%s' % (new_name[1:], os.path.splitext(target)[1]))
-#                 # new_cap = dict(cap)
-#                 # new_cap['target'] = new_target
-#                 # new_cap['name'] = new_name
-#                 # cap_set(new_cap, verbose=True)
-#                 if '_'+t_parent==t_base or t_parent.lower()=='flat':
-#                     print ">>>>>> SKIPPING %s %s" % (name, target)
-#                     # new_name = os.path.dirname(target) + '/_' + os.path.basename(target)
-#                     # print "DASH IT %s | %s ==> %s" % (name, target, new_name)
-#                 elif name.lower().startswith('doc'):
-#                     print '>>>> IGNORING %s -> %s' % (name, target)
-#                 elif os.path.splitext(target)[1]=='.org':
-#                     print 'CVT %s ==> %s' % (target, new_target)
-#                     # os.system('mv "%s" "%s"' % (target, new_target))
-#                     # cap_delete(cap)
-#                 elif t_ext in ['.org', '.docx', '.pptx', '.txt', '.one']:
-#                     x =  '%s.org' % os.path.splitext(os.path.basename(new_target))[0]
-#                     print 'TOUCH %s   #original=%s  %s' % (x, target, cap.get('name'))
-#                     #os.system('touch "%s"' % x)
-#             pass
-#         elif action in ['app', 'url', 'folder', 'nstr', 'sh', 'command', 'script', 'python']:
-#             pass
-#         else:
-#             print "CAP %r"  % cap
-
 
 
 def cmd_move():
@@ -531,12 +490,17 @@ def cmd_rescan(*roots):
 
 
 def cmd_scrub():
-    raw_input("### HIT RETURN TO REMOVE ALL 'DOC' and 'FOLDER' COMMANDS")
+    if 'y'!=raw_input("### PRESS 'y' RETURN TO REMOVE ALL 'DOC' and 'FOLDER' COMMANDS: "):
+        return
     for f in cap_find_all(''):
         cap = cap_get(f)
         if cap[ACTION] in ['doc', 'folder']:
             print "### DELETING %s --> %s" % (cap[NAME], cap[TARGET])
             cap_delete(cap)
+    print;
+    cmd_dano()
+    print;
+    cmd_rescan()
 
 
 def cmd_set(ask=True):
@@ -657,6 +621,8 @@ def cmd_execute(name=None):
     name = name or arg(1, prompt='Enter name of command to execute')
     path = cap_find_one(name)
     os.system('open "%s"' % path)
+
+
 
 
 
@@ -897,7 +863,7 @@ def params(**updates):
         try:
             with open(PARAMS_FILE, 'r') as f:
                 params_cache = json.loads(f.read())
-        except:
+        except Exception:
             params_cache = {}
     if updates:
         params_cache.update(updates)
@@ -946,7 +912,7 @@ def last_commands(n):
     try:
         with open(LAUNCH_LOG, 'r') as f:
             return [json.loads(line.replace('\n', '')) for line in f.readlines()[-n:]]
-    except:
+    except Exception:
         return []
 
 
@@ -1002,7 +968,7 @@ def user_input_no_console(prompt, default_value=''):
 
 def error(err_str):
     raw_input("\n\nERROR: %s\n\n(press RETURN to exit)" % err_str)
-    os._exit(1)
+    os.sys.exit(1)
 
 
 
@@ -1058,7 +1024,7 @@ def send_key(keycode, using=''):
 # from  http://www.macdrifter.com/2011/12/python-and-the-mac-clipboard.html
 def get_clipboard():
     p = subprocess.Popen(['pbpaste'], stdout=subprocess.PIPE)
-    retcode = p.wait()
+    p.wait()
     data = p.stdout.read()
     return data
 

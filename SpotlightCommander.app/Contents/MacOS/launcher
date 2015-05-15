@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-# AUTHOR:  Dan Oblinger  <code@oblinger.us>
-# CREATE:  2014-
-# MODULE:  
+# (C) Copyright 2014- Dan Oblinger  <code@oblinger.us>
 
 import os
 import re
@@ -13,8 +11,8 @@ import subprocess
 debug=False
 launcher_keys = None    # This is set to the 'keys' parsed from the launcher
 
-
-
+# Allowable Scripting languages:  'sh'  'python'  'ruby'
+INTERPRETERS = {'python':'/usr/bin/env python "%s" %s', 'sh':'/bin/bash "%s" %s', 'ruby':'/usr/bin/ruby'}
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 APP_SRC_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
 TRAMPOLINE_FILE = '/tmp/spot_cmdr_trampoline'
@@ -102,16 +100,16 @@ def type_nstr(keys):
     osa('tell application "growl" to activate')
     write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
     osa('tell application "Notester" to activate')
-def type_python(keys):
-    return type_script(keys, 'python')
+# def type_python(keys):
+#     return type_script(keys, 'python')
 def type_script(keys, target=None):
-    template = {'python':'/usr/bin/env python "%s" %s', 'sh':'/bin/bash "%s" %s'}.get(target or keys.get(TARGET))
+    template = INTERPRETERS.get(target or keys.get(TARGET))
     if not template:
         error("Unknown script interpreter.")
     arg = ('"%s"' % keys[ARG]) if ARG in keys else ''
     run(template % (keys[PATH], arg))
-def type_sh(keys):
-    return type_script(keys, 'sh')
+# def type_sh(keys):
+#     return type_script(keys, 'sh')
 def type_command(keys):
     line = keys[TARGET]
     if ARG in keys:
