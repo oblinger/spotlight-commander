@@ -84,7 +84,7 @@ def cmd_launch(applet_path, now_in_console):
 
 
 def type_app(keys):
-    run('open -a "%s"' % keys[TARGET])
+    run('open "%s"' % keys[TARGET])
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')

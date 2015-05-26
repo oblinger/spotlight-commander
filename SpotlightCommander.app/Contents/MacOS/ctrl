@@ -158,7 +158,6 @@ DANO_FOLDERS = """
 TARGET: /ob
 TARGET: /ob/cmd
 TARGET: /ob/data
-TARGET: /ob-large
 TARGET: /ob/gdrive
 TARGET: /ob/logs
 TARGET: /ob/proj
@@ -171,14 +170,13 @@ TARGET: /ob/data/mail
 TARGET: /ob/data/music-tiny
 TARGET: /ob/data/MyDesk
 TARGET: /ob/data/Scratch
-TARGET: /ob/data/topics
 TARGET: /ob/data/wallpapers
 TARGET: /ob/proj/bin
 #TARGET: /ob/proj/MyNDA
-
 TARGET: /ob/data/MyDesk
 TARGET: /ob/data/Scratch
 TARGET: /ob/data/sensitive_S1S2.dmg, Sensitive, app
+
 TARGET: /ob/logs/_archive_bin,  ArchBin
 TARGET: /ob/logs/_archive_proj, ArchProj
 TARGET: /ob/logs/_archive_ref,  ArchRef
@@ -190,18 +188,84 @@ TARGET: /ob/logs/Humor
 TARGET: /ob/logs/Ideas
 TARGET: /ob/logs/Letters
 TARGET: /ob/logs/ToBuy
-TARGET: /ob/logs/ToFile
 TARGET: /ob/logs/ToRead
-TARGET: /ob/logs/ToTrash
 TARGET: /ob/logs/WP
 
-TARGET: /Users/oblinger/Google Drive, Gdrive
+TARGET: /ob-large
+TARGET: /ob-large/_MUSIC_, Music
+TARGET: /ob-large/_PHOTOS_, Photos
+TARGET: /ob-large/install
+TARGET: /ob-large/ToFile
+TARGET: /ob-large/ToTrash
+
 TARGET: /, Root
 TARGET: /Users/oblinger
 TARGET: /Users/oblinger/Downloads
 TARGET: /Users/oblinger/Dropbox
 TARGET: /Users/oblinger/templates
+TARGET: /Users/oblinger/Google Drive, Gdrive
+TARGET: /Volumes/sensitive
+TARGET: /Volumes/stub
 
+TARGET: Social, Social, nstr
+TARGET: AAII, AAII, nstr
+TARGET: AK, AK, nstr
+TARGET: Active, Active, nstr
+TARGET: Activities, Activities, nstr
+TARGET: Actualize, Actualize, nstr
+TARGET: Addresses, Addresses, nstr
+TARGET: Annual, Annual, nstr
+TARGET: Art, Art, nstr
+TARGET: Ascii, Ascii, nstr
+TARGET: AtHome, AtHome, nstr
+TARGET: AtWork, AtWork, nstr
+TARGET: BKT, BKT, nstr
+TARGET: BList, BList, nstr
+TARGET: Bg, Bg, nstr
+TARGET: Bills, BillsNstr, nstr
+TARGET: Bio, Bio, nstr
+TARGET: Blogger, Blogger, nstr
+TARGET: Books, Books, nstr
+TARGET: Brain2, Brain2, nstr
+TARGET: Budget, Budget, nstr
+TARGET: Camping, Camping, nstr
+TARGET: Clothes, Clothes, nstr
+TARGET: Colors, Colors, nstr
+TARGET: CommadoCooking, CommadoCooking, nstr
+TARGET: Comp, Comp, nstr
+TARGET: CrockCooking, CrockCooking, nstr
+TARGET: DELEGATE, DELEGATE, nstr
+TARGET: DansCategories, DansCategories, nstr
+TARGET: Dinner, Dinner, nstr
+TARGET: Do, Do, nstr
+TARGET: Events, Events, nstr
+TARGET: Fin, Fin, nstr
+TARGET: Gadgets, Gadgets, nstr
+TARGET: Genre, Genre, nstr
+TARGET: Habits, Habits, nstr
+TARGET: Hack, Hack, nstr
+TARGET: Health, Health, nstr
+TARGET: Home, Home, nstr
+TARGET: HouseStuff, HouseStuff, nstr
+TARGET: Lang, Lang, nstr
+TARGET: LifePlanning, LifePlanning, nstr
+TARGET: Magizines, Magizines, nstr
+TARGET: Me, Me, nstr
+TARGET: Medical, Medical, nstr
+TARGET: My, My, nstr
+TARGET: Myfo, Myfo, nstr
+TARGET: Notester, Notester, nstr
+TARGET: OPPORTUNE, OPPORTUNE, nstr
+TARGET: Oblio, Oblio, nstr
+TARGET: Org, Org, nstr
+TARGET: Prime, Prime, nstr
+TARGET: Priorities, Priorities, nstr
+TARGET: Repeat, Repeat, nstr
+TARGET: Role, Role, nstr
+TARGET: Verify, Verify, nstr
+TARGET: Week, Week, nstr
+TARGET: Work, Work, nstr
+TARGET: eCards, eCards, nstr
 
 """
 
