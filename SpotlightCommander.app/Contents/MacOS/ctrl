@@ -36,7 +36,7 @@ KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
 WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'a':'about',    'b':'browser',  'c':'create',   'cp':'copy',          'e':'edit',
-             'f':'finder',   'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
+             'f':'finder',   'h':'help',     'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
              'p':'print',    'rm':'remove',  's':'scan',     'v':'view',
              'x':'execute',  '?':'usage'}
 
@@ -53,6 +53,7 @@ USAGE = \
         --finder        name                captures current finder item
     f   --folder        dest name           Creates a new FOLDER and 'About ...' link under 'dest'      ('=' will use finder folder)
         --fix                               FIXES previous command
+    h   --help                              Prints HELP (same as usage info)
         --install                           INSTALLS special commands
     ls  --list                              performs LS style list of commands
     mv  --move          name newname        MOVES command to new name
@@ -199,6 +200,7 @@ TARGET: /ob-large/ToFile
 TARGET: /ob-large/ToTrash
 
 TARGET: /, Root
+TARGET: /Applications
 TARGET: /Users/oblinger
 TARGET: /Users/oblinger/Downloads
 TARGET: /Users/oblinger/Dropbox
@@ -453,6 +455,10 @@ def cmd_folder():
         os.makedirs(new_folder)
     os.system('touch "%s"' % (new_about,))
     cmd_scan(new_about)
+
+
+def cmd_help():
+    cmd_usage()
 
 
 def cmd_last():
