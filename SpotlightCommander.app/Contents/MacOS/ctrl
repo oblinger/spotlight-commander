@@ -90,10 +90,12 @@ USAGE = \
     nstr         opens name in notester
 
   CAP PARAMETERS
-    action       cap type (see list above)
+    action       cap type (see types list above)
     target       filepath, url, etc.
-    io           console, pinned
-    prompt       string used to prompt user  (will be appended to target or replace '%s' within target)
+    io           'console' (causes command to run in its own console), 'pinned' (causes console to remain open after cmd)
+    prompt       string used to prompt user for input.  User's response:
+                    (1)  will be passed as ARGV[1] if action='script',
+                    (2) will replace '{prompt}' if target,  else (3) will be appended to the end of target
 
 """
 
@@ -206,6 +208,7 @@ TARGET: /Users/oblinger/Downloads
 TARGET: /Users/oblinger/Dropbox
 TARGET: /Users/oblinger/templates
 TARGET: /Users/oblinger/Google Drive, Gdrive
+TARGET: /Volumes
 TARGET: /Volumes/sensitive
 TARGET: /Volumes/stub
 

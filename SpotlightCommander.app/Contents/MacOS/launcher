@@ -150,6 +150,8 @@ def cap_to_str(cap):
     )
 
 def run(str):
+    if debug:
+        print("  $ %s" % str)
     if 0!=os.system(str):
         error('Command Failed.')
 
