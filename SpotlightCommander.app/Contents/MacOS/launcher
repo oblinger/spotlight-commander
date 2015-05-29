@@ -8,6 +8,7 @@ import traceback
 import json
 import subprocess
 
+RUN_PREFIX = 'export HOME=/Users/oblinger ; source ~/.bash_profile ; '
 debug=False
 launcher_keys = None    # This is set to the 'keys' parsed from the launcher
 
@@ -34,7 +35,6 @@ def main():
     rest = [arg for arg in rest if arg not in FLAGS]
     if '--prompt' not in keys:
         print('### "launcher" called with: %r' % os.sys.argv)
-        #raw_input('sdfg')
     if '--debug' in keys:
         debug=True
     if '--launch' in keys or '--now_in_console' in keys:
@@ -113,8 +113,8 @@ def type_script(keys, target=None):
 def type_command(keys):
     line = keys[TARGET]
     if ARG in keys:
-        if '%' in line:
-            line = line % keys[ARG]                  # if target has a '%' then treat it as a python template
+        if '{prompt}' in line:
+            line = line.replace('{prompt}', keys[ARG])  # if target has a '{prompt}' then replace it with user response
         else:
             line = '%s "%s"' % (line, keys[ARG])     # else just append arg to target (inside quotes)
     run(line)
@@ -133,7 +133,7 @@ def appkeys(file):
     return keys
 
 def error(err_str):
-    raw_input("\nERROR: %s  (hit return to exit)" % err_str)
+    raw_input("\nSPOTLIGHT LAUNCHER ERROR: %s  (hit return to exit)" % err_str)
     os.sys.exit(1)
 
 
@@ -152,8 +152,10 @@ def cap_to_str(cap):
 def run(str):
     if debug:
         print("  $ %s" % str)
-    if 0!=os.system(str):
-        error('Command Failed.')
+    #retcode = subprocess.call(['/bin/bash', '-i', '-c', str])
+    retcode = os.system(RUN_PREFIX + str)
+    if retcode!=0:
+        error('Command %r Failed.' % str)
 
 
 # Executes multi-line applescript.  (cannot contain single quote (') character)
