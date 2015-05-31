@@ -483,17 +483,22 @@ def cmd_install(reinstall=True):
         print 'Creating folder %r' % CMD_DIR
         os.makedirs(CMD_DIR)
 
-    cap_set({NAME:'CREATE',  ACTION:'command', TARGET:'%s create =' % script,               PROMPT: 'CREATE. Enter "name.template"'},    verbose=True)
+    cap_set({NAME:'CREATE',  ACTION:'command', TARGET:'%s create =' % script,
+                PROMPT: 'CREATE. Enter "name.template"'},    verbose=True)
     cap_set({NAME:'FIX',     ACTION:'command', TARGET:'%s fix'      % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'FOLDER',  ACTION:'command', TARGET:'%s folder =' % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'ABOUT',   ACTION:'command', TARGET:'%s about'    % script},                verbose=True)
     cap_set({NAME:'SCAN',    ACTION:'command', TARGET:'%s scan ='   % script, IO: 'pinned'},  verbose=True)
 
-    cap_set({NAME:'cmdCOPY', ACTION:'command', TARGET:'%s cp %%s' % script, IO: 'pinned',   PROMPT: 'CMD COPY.  Enter source & dest: '}, verbose=True)
-    cap_set({NAME:'cmdEDIT', ACTION:'command', TARGET:'%s -e %%s' % script, IO: 'pinned',   PROMPT: 'Launcher Edit: '}, verbose=True)
+    cap_set({NAME:'cmdCOPY', ACTION:'command', TARGET:'%s cp {prompt}' % script, IO: 'pinned',
+                PROMPT: 'CMD COPY.  Enter source & dest: '}, verbose=True)
+    cap_set({NAME:'cmdEDIT', ACTION:'command', TARGET:'%s -e {prompt}' % script, IO: 'pinned',
+                PROMPT: 'Launcher Edit: '}, verbose=True)
     cap_set({NAME:'cmdLS',   ACTION:'command', TARGET:'%s ls'     % script, IO: 'pinned'},  verbose=True)
-    cap_set({NAME:'cmdMV',   ACTION:'command', TARGET:'%s mv %%s' % script, IO: 'pinned',   PROMPT: 'CMD MOVE.  Enter source & dest: '}, verbose=True)
-    cap_set({NAME:'cmdRM',   ACTION:'command', TARGET:'%s rm %%s' % script, IO: 'pinned',   PROMPT: 'CMD REMOVE.  Enter name: '}, verbose=True)
+    cap_set({NAME:'cmdMV',   ACTION:'command', TARGET:'%s mv {prompt}' % script, IO: 'pinned',
+            PROMPT: 'CMD MOVE.  Enter source & dest: '}, verbose=True)
+    cap_set({NAME:'cmdRM',   ACTION:'command', TARGET:'%s rm {prompt}' % script, IO: 'pinned',
+            PROMPT: 'CMD REMOVE.  Enter name: '}, verbose=True)
 
     # cap_set({NAME:'ll',       ACTION:'command', TARGET:'%s'        % script, IO: 'console'}, verbose=True)
     # cap_set({NAME:'llb',      ACTION:'command', TARGET:'%s -b'     % script, IO: 'console'}, verbose=True)
