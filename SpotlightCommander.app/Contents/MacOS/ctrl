@@ -1197,5 +1197,5 @@ def system_to_str(*arglist):
     return stdout.rstrip()
 
 
-cmd_scan('/Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
+#cmd_scan('/Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
 main()
