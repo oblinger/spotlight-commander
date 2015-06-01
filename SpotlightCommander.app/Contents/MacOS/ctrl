@@ -16,8 +16,8 @@ import json
 # -- fix EDITOR thing
 
 
-RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']
-MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
+RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']  # Roots that 'scan' command starts from
+MARKER_FILE_TYPES = ['.org', '.md', '.gdoc', '.webloc']
 MARKER_PREFIX = 'About '
 MARKER_DEFAULT_EXTENSION = '.org'
 
@@ -96,6 +96,11 @@ USAGE = \
     prompt       string used to prompt user for input.  User's response:
                     (1)  will be passed as ARGV[1] if action='script',
                     (2) will replace '{prompt}' if target,  else (3) will be appended to the end of target
+
+
+SCAN
+    About XXX.*         Creates aXXX, jXXX, and XXX is either set to the folder or to XXX.docx  (or other 'doc type file')
+    .../XXX/XXX.doc
 
 """
 
@@ -593,10 +598,10 @@ def cmd_scan(*roots):
     print "### SCANNING FOLDERS UNDER, %s, FOR 'About ...' TARGETS" % ', '.join(roots)
     for root in roots:
         if is_cmd_marker_file(root):
-            update_cmds_for_about_target(root)
-        else:
-            for f in recursive_file_gen(root):
-                update_cmds_for_about_target(f)
+            update_cmds_for_cmd_target(root)
+        #else:
+        for f in recursive_file_gen(root):
+            update_cmds_for_cmd_target(f)
 
 
 def cmd_scrub():
@@ -918,13 +923,13 @@ def cap_desc(cap, max_len=74):
 
 def is_cmd_marker_file(f):
     folder = os.path.dirname(f)
-    parent = os.path.basename(folder)
-    parts   = os.path.splitext(os.path.basename(f))
+    parent = os.path.basename(folder).lower()
+    parts   = os.path.splitext(os.path.basename(f).lower())
     return parts[0].startswith(MARKER_PREFIX) or \
-           (parts[0].lower()== parent.lower() and parts[1] in MARKER_FILE_TYPES)
+           (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
 
 
-def update_cmds_for_about_target(f):
+def update_cmds_for_cmd_target(f):
     if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
         return
     folder = os.path.dirname(f)
@@ -938,12 +943,12 @@ def update_cmds_for_about_target(f):
         if os.path.splitext(suffix)[0].lower() == name.lower():
             targets.append(os.path.join(folder, suffix))
     if len(targets)==1:
-        cap = dict(action='doc', name=name, target=targets[0])
+        cap = dict(action='doc', name=name, target=os.path.realpath(targets[0]))
         cap_set(cap, verbose=True)
 
     ## ADD 'aXxxx' cmd for 'About ...' files
     if os.path.basename(f).startswith(MARKER_PREFIX):
-        a_cap = dict(action='doc', name='a%s' % name, target=f)
+        a_cap = dict(action='doc', name='a%s' % name, target=os.path.realpath(f))
         cap_set(a_cap, verbose=True)
 
 
