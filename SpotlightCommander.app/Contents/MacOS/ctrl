@@ -17,7 +17,7 @@ import json
 
 
 RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']  # Roots that 'scan' command starts from
-MARKER_FILE_TYPES = ['.org', '.md', '.gdoc', '.webloc']
+MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
 MARKER_PREFIX = 'About '
 MARKER_DEFAULT_EXTENSION = '.org'
 
@@ -867,9 +867,13 @@ def cap_set(cap, **kwargs):
     os.system('chmod 755 "%s"' % app_path)
     os.system('mkdir "%s/Contents/Resources"' % path)
     os.system('cp "%s/../Resources/applet.icns" "%s/Contents/Resources"' % (APPLET_FOLDER, path))
-    cap_set_jcap(cap, verbose)
+    #cap_set_jcap(cap, verbose)
 
-def cap_set_jcap(cap, verbose):
+
+#### NOTE:  2015-6-1  removed auto jXXXX, now cmd_scan adds these, but only for marker files.
+####        idea is to move to only having jXXXX links when there is a marker file
+
+def cap_set_jcap_XXXXXXXXXXXX(cap, verbose):
     """adds the shadow 'j...' command each time the main command is updated."""
     if cap[ACTION] != 'doc' or not CREATE_JREFS:
         return
@@ -929,13 +933,18 @@ def is_cmd_marker_file(f):
            (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
 
 
+# TODO -- refactor code so we use 'to_cmd_name' in all places where we build them
+#  - remove all '_'
+#  - first upper, rest lower
+
 def update_cmds_for_cmd_target(f):
+    f = os.path.realpath(f)
     if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
         return
     folder = os.path.dirname(f)
-    name = os.path.splitext(os.path.basename(f))[0]
+    name = os.path.splitext(os.path.basename(f))[0].replace('_', '')        # Remove '_' from name
     if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
-    name = '%s%s' % (name[0].capitalize(), name[1:])
+    name = '%s%s' % (name[0].capitalize(), name[1:].lower())                # First upper, then rest lower for name
 
     ## SCAN FOR AND ADD BASE CMD LINK
     targets = []
@@ -948,9 +957,11 @@ def update_cmds_for_cmd_target(f):
 
     ## ADD 'aXxxx' cmd for 'About ...' files
     if os.path.basename(f).startswith(MARKER_PREFIX):
-        a_cap = dict(action='doc', name='a%s' % name, target=os.path.realpath(f))
+        a_cap = dict(action='doc', name='a%s' % name, target=os.path.realpath(f))                                         # maybe can remove all of these internal 'readpath'  calls?
         cap_set(a_cap, verbose=True)
 
+    ## ADD 'jXxxx' cmd for folder
+    cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)) )
 
 
 def infer_action(target, **kwargs):
@@ -1186,5 +1197,5 @@ def system_to_str(*arglist):
     return stdout.rstrip()
 
 
-#cmd_rescan('/ob/proj/EOC') #'/ob/topics/Life')
+cmd_scan('/Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
 main()
