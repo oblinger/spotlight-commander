@@ -9,6 +9,8 @@ import textwrap
 import time
 import json
 
+# when scanning for marker files, sort the hits by MARKER_FILE_TYPES and always link to the first hit
+
 # create ~/templates  cmd -t --template (folder w. '=')  template  foo.templatename   or just templatename
 
 # Use sym link for .icns file
@@ -947,13 +949,12 @@ def update_cmds_for_cmd_target(f):
     name = '%s%s' % (name[0].capitalize(), name[1:].lower())                # First upper, then rest lower for name
 
     ## SCAN FOR AND ADD BASE CMD LINK
-    targets = []
+    target = None
     for suffix in os.listdir(folder):
-        if os.path.splitext(suffix)[0].lower() == name.lower():
-            targets.append(os.path.join(folder, suffix))
-    if len(targets)==1:
-        cap = dict(action='doc', name=name, target=os.path.realpath(targets[0]))
-        cap_set(cap, verbose=True)
+        if os.path.splitext(suffix)[0].lower() == name.lower() and target_priority(target)<target_priority(suffix):
+            target = os.path.join(folder, suffix)
+    if target:
+        cap_set( dict(action='doc', name=name, target=os.path.realpath(target)), verbose=True )
 
     ## ADD 'aXxxx' cmd for 'About ...' files
     if os.path.basename(f).startswith(MARKER_PREFIX):
@@ -962,6 +963,15 @@ def update_cmds_for_cmd_target(f):
 
     ## ADD 'jXxxx' cmd for folder
     cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)) )
+
+def target_priority(f):
+    "preference among link targets... bigger is better"
+    if not f:
+        return 0
+    ext = os.path.splitext(f)[1].lower()
+    if ext not in MARKER_FILE_TYPES:
+        return 1
+    return len(MARKER_FILE_TYPES) - MARKER_FILE_TYPES.index(ext) + 2
 
 
 def infer_action(target, **kwargs):
