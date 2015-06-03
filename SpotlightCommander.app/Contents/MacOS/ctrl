@@ -442,21 +442,25 @@ def cmd_fix(name=None):
     input = user_input(prompt).strip()
     if input.lower() in ['', 'n']:
         return
-    ## Compute NAME
+    ## Parse NAME
     if '=' in input:
         idx = input.index('=')
         cap[NAME]=input[:idx].strip()
         input = input[idx+1:].strip()
-    ## Compute ACTION
-    action = input[0:input.index(' ')].lower() if ' ' in input else None
-    if action and action in ACTIONS:        # Handle action prefix
-        cap[ACTION] = action
-        input = input[len(action):]
+    ## Parse ACTION
+    parsed_action = input[0:input.index(' ')].lower() if ' ' in input else None
+    if parsed_action and parsed_action in ACTIONS:        # Handle action prefix
+        input = input[len(parsed_action):]
+    else:
+        parsed_action = None
     ## Compute TARGET
     input = input.strip()
     if input!='' and input!='y':
         cap[ACTION]=None
         cap[TARGET]=input
+    ## Compute ACTION
+    if parsed_action:
+        cap[ACTION]=parsed_action
     if not cap[ACTION] and cap[TARGET]:
         cap[ACTION] = infer_action(cap[TARGET], error=False)
     if cap.get(ACTION):
@@ -941,7 +945,7 @@ def is_cmd_marker_file(f):
     folder = os.path.dirname(f)
     parent = os.path.basename(folder).lower()
     parts   = os.path.splitext(os.path.basename(f).lower())
-    return parts[0].startswith(MARKER_PREFIX) or \
+    return parts[0].startswith(MARKER_PREFIX.lower()) or \
            (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
 
 
@@ -1217,5 +1221,5 @@ def system_to_str(*arglist):
     return stdout.rstrip()
 
 
-#cmd_scan('/Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
+#cmd_scan('/ob/topics/txt') #Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
 main()
