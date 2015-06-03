@@ -427,26 +427,35 @@ def cmd_finder(name=None):
 def cmd_fix(name=None):
     cap       = get_current_link_while_in_console()
     cap[NAME] = name or last_command_name()
-    print "FIX THE %r COMMAND" % cap[NAME].upper()
-    print "- PRESS RETURN to accept new target below"
-    print "- PASTE a url or path to fix to a different target"
-    print "- ADD 'nnn=' to change the NAME of the command being updated"
-    print "- USE 'nnn=aaa tttt' to specify everything: the NAME, ACTION, and TARGET"
+    if cap[NAME]:
+        print "Enter 'y' to update command %r" % cap[NAME].upper()
+        print ""
+    print "Enter 'nnn=' to update command nnn to target: %s %r" % (cap[ACTION], cap[TARGET])
     print ""
-    print "NEW TARGET: %r %s" % (cap[ACTION], cap[TARGET])
-    input = user_input('SET %r [Y/n]' % cap[NAME])
-    if input=='n':
+    print "Enter 'nnn=URL-OR-PATH' to specify the target URL-OR-PATH"
+    print ""
+    print "Enter 'nnn=aaa tttt' to specify everything: "
+    print "    the command NAME, ACTION, and TARGET"
+    print "    (Command action may be:  doc, folder, app, command, script.)"
+    print "\n"
+    prompt = 'Fix %r [y/n]' % cap[NAME] if cap[NAME] else 'Command to fix'
+    input = user_input(prompt).strip()
+    if input.lower() in ['', 'n']:
         return
-    if '=' in input:                    # Handle '=' prefix
+    ## Compute NAME
+    if '=' in input:
         idx = input.index('=')
         cap[NAME]=input[:idx].strip()
         input = input[idx+1:].strip()
-    word = input[0:input.index(' ')].lower() if ' ' in input else None
-    if word and word in ACTIONS:        # Handle action prefix
-        cap[ACTION] = word
-        input = input[len(word):].lstrip()
+    ## Compute ACTION
+    action = input[0:input.index(' ')].lower() if ' ' in input else None
+    if action and action in ACTIONS:        # Handle action prefix
+        cap[ACTION] = action
+        input = input[len(action):]
     else:
         cap[ACTION] = infer_action(input, error=False)
+    ## Compute TARGET
+    input = input.strip()
     if input!='' and input!='y':
         cap[TARGET]=input
     if cap.get(ACTION):
