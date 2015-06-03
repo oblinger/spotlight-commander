@@ -186,6 +186,7 @@ TARGET: /ob/proj/bin
 TARGET: /ob/data/MyDesk
 TARGET: /ob/data/Scratch
 TARGET: /ob/data/sensitive_S1S2.dmg, Sensitive, app
+TARGET: /Volume/sensitive, app
 
 TARGET: /ob/logs/_archive_bin,  ArchBin
 TARGET: /ob/logs/_archive_proj, ArchProj
