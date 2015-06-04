@@ -20,8 +20,8 @@ likewise easily authored, understood, and machine processed.
 * **LOSSLESS** -- Any source structure printed into Uniform is guaranteed to parse back onto a JSON structure 
   EQUAL to its original.
 
-* **BI-DIRECTIONAL** -- Uniform expressions map losslessly onto JSON, and conversly JSON expressions also map losslessly 
-  onto Uniform.  (Indeed bi-directional, lossless mappings exists for multiple common formats:  
+* **BI-DIRECTIONAL** -- Uniform expressions map losslessly onto JSON, and conversely JSON expressions also map losslessly 
+  onto Uniform.  (Indeed bi-directional, lossless mappings exists for many common formats:  
   JSON, RDF, Lisp sexprs, etc.)
 
 * **PURELY SYNTACTIC** -- Uniform parses a generic C/Java/Python/Scala-ish language in a langauge-independent, 
@@ -29,7 +29,7 @@ likewise easily authored, understood, and machine processed.
   forms like "while", "if", "class", etc.)
   
 * **MARKDOWN-ish** -- Like both markdown and YAML, Uniform first priority is to have its constructs optimized to 
-look simple, intuitive, and beautiful in their textual form.
+  look simple, intuitive, and beautiful in their textual form.
   
 * **OBVIOUS** -- Like YAML, Uniform is "obvious".  By viewing a handful of examples, an engineer already familiar
   with modern programming languages, can infer the JSON mappings for complex uniform sourcecode, without 
@@ -48,10 +48,10 @@ Thus Uniform is a generic bridge to source-code like info, just as YAML is a gen
 
 ## So what is the "uni"-form?
 
-The entire **Uniform Language** is nothing more than recursive applications of this single _"uni"_-form shown here:  
+The entire Uniform Language is nothing more than recursive applications of this single _"uni"_-form shown here:  
 
 ```python
-    head(VALUE_, _VALUE_2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
+    HEAD(VALUE_, _VALUE_2, ..., key_a: VALUE_A, key_b: VALUE_B, ...)     
 ```
 
 As you can see the uni-form looks like a standard function call from any procedural language.
@@ -72,13 +72,12 @@ JSON constants: null, true, false.  This defines the entire Uniform language!
 
 ## Variational Forms
 
-The format described above is called _Canonical Form_, and for any Uniform expression there is exactly one canonical form.
-Like YAML, we include multiple surface forms in order that common types of data each have natural and 
-beautiful textual forms.  In considering the example below, keep in mind **_ALL_** of these surface
-forms map losslessly down to Canonical Uniform in the obvious way -- 
-e.g. a recursive uniform expression.
+The "uni"-form format above is called _Canonical Uniform_.   For any Uniform expression it has exactly one 
+canonical form.  Like YAML, we include multiple surface forms in order that common types of data each have 
+natural and beautiful textual forms.  In considering the example below, keep in mind **_ALL_** of these surface
+forms map losslessly down to Canonical Uniform above in the obvious way:
 
-    \# Here is a motivating example showing the wide range of alternate surface forms possible in Uniform.
+    # Here is a motivating example showing the wide range of alternate surface forms possible in Uniform.
     ::Person
         name: 'Dan Oblinger
         # Indention can be used to indicate the end of an embedded object
@@ -106,12 +105,22 @@ e.g. a recursive uniform expression.
 														-:- on the PRECIDENCE between these operators...  so we have just included them ALL in Uniform
     
    
-        some_uniform_code::
-            def factorial(x) {
-    	        if x<=1 { return 1; }
-    	        else { return x * factorial(x-1); }
+        some_uniform_code_that_looks_like_C_or_Java:
+            {
+                def factorial(x) {
+        	        if x<=1 { return 1; }
+    	            else { return x * factorial(x-1); }
+                }
             }
-    
+        
+        the_same_uniform_expression_expressed_in_pythonish_way:::
+            def factorial(x):
+                if x<=1:
+                    return 1
+                else:
+                    return x * factorial(x-1
+        
+        
         some_embedded_source_code:: .java          # Notice here we are embedding the source code of another language 
                                                    # and we do NOT need to add any backquoting !!
     	    import java.lang;
@@ -193,23 +202,27 @@ All are parsable by Uniform, and all are EQUAL to each other.
 <br><br>
 
 
- <h4> Statement Form
+ <h4> Statement Forms
  
- Uniform includes procedure statement-like forms simply by allowing Uniform expressions that do not require 
- parens, or commas, and instead simply end with a ';' character.  So:   ````print "hello world!" flush:True ;````
- is valid uniform, and its canonical form is:  ````print("hello world", flush: True)````
+ Uniform includes variational form which allow for traditional whitespace insensitive code forms similar to C, C++, 
+ Java, Scala, Go, etc..  A second variational form allows for whitespace sensitive code forms that eliminate 
+ braces, and use indention to encode structure.  Both forms have strong advantage for certain types of data,
+ so Uniform doesn't make you choose!  Both surface forms parse down to equivalent Canonical Uniform or JSON.
  
- In order to avoid parsing ambiguity we only allow statement forms inside of a block form ````{ ... }````,
- which is natural, since in languages that use braces to denote block, they only allow statements inside those
- blocks.  As a special cases:
+ The C/C++/Java/Scala/Go-ish parsing is performed by the whitespace insensitive brace signaled by the leading
+ ````{'''' character.  Statements in the form include traditioanl JSON forms, and previously seen Canonical Uniform,
+ but this variational form extends parsing to allow uniform forms that do not have separating commas, or open / closing 
+ parens.  
+ 
+As a special cases:
   - Uniform allows block forms to stand in as the ending of a statement instead of a semi-colon
-  - Uniform allows one to omit the trailing semi-colon at the end of a block.  
-  - And in the case that a Uniform expression, foo(), has no arguments, the parens can be dropped which 
-    yields a bare symbol in the source code.
-  - "#" denotes a comment that extends to the end of the current line.
+  - Uniform allows one to omit the trailing semi-colon at the end of a block. 
+  - An unquoted token beginning with an alpha character is mapped to a _symbol_ expression, ````sym('token')````.
+    This allows syntactic forms that use such token in their structure.
+  - "#" and "//" both indicate the beginning of a comment that extends to the end of the current line.
     
- Putting these rules together we see each of these very natural looking statements map in the obvious way 
- into canonical uniform.
+ Putting these rules together we see each of these very natural looking statements that map in a resonable way 
+ onto canonical uniform.
  
  ````
  # these Uniform statements look like C or Java
@@ -225,11 +238,11 @@ All are parsable by Uniform, and all are EQUAL to each other.
  )
 
  
-# Even pretty language-specific constructs are still expressible in Uniform:
+# Even surprisingly language-specific constructs are still expressible in Uniform:
 {
     class MyClass extends (OtherClass, LastClass) {
     
-        def nonsense_fn(x, int y, z:5) {
+        def nonsense_fn(int x, int y, z:5) {
             with open("/tmp/hello.txt", mode: "w+") as: f {
                 f.write("hello world");
             }
@@ -252,7 +265,7 @@ YAML form allows embedding of arbitrary other syntax without complex and visuall
 uses whitespace sensitivity to enable unambiguous nesting over very large structures without any possibility of 
 missing a closing brace, close quote, or having ones indention different than ones nesting.  These kinds of errors
 are the primary reason why direct reading or editing of large JSON structures is hair pulling suicide inducing 
-endevor that humans should never be subjected to.
+endeavor that humans should never be subjected to.
 
 The full YAML language itself can be embedded into Uniform at any point as indicated by the '---' document initiator.
 It either extends to the '...' document terminator, or to a line whose indention is LESS than the beginning of the
@@ -359,7 +372,7 @@ Certain forms (for example the if-elif-elif-else form requires some post process
 
 
 
-##### STATEMNT FORM
+##### STATEMENT FORM
 
 | equivelant forms | **STATEMENT FORMS** |
 | ---------------- | ------------------- |
