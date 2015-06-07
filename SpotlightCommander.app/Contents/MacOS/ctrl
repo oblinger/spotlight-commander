@@ -949,11 +949,6 @@ def is_cmd_marker_file(f):
            (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
 
 
-
-# TODO -- refactor code so we use 'to_cmd_name' in all places where we build them
-#  - remove all '_'
-#  - first upper, rest lower
-
 def update_cmds_for_cmd_target(f):
     f = os.path.realpath(f)
     if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
@@ -977,6 +972,7 @@ def update_cmds_for_cmd_target(f):
 
     ## ADD 'jXxxx' cmd for folder
     cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)) )
+
 
 def get_cmd_case(name):
     name = name.replace('_', '')                            # Remove '_' from name
