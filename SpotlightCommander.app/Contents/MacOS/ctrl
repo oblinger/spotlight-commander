@@ -370,7 +370,7 @@ def cmd_dano(lines=DANO_FOLDERS):
             if target[0]=='.':                                          # USE CWD TO EXPAND RELATIVE PATHS
                 target = os.path.join(os.getcwd(), target[2:])
             name = parts[1] if len(parts)>1 else os.path.splitext(os.path.basename(parts[0]))[0]
-            name = '%s%s' % (name[0].capitalize(), name[1:])
+            name = get_cmd_case(name)
             action = parts[2] if len(parts)>2 else 'folder' if target[0] in ['.', '/'] else None
             if action:
                 cap_set(dict(name=name, target=target, action=action), verbose=True)
@@ -949,6 +949,7 @@ def is_cmd_marker_file(f):
            (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
 
 
+
 # TODO -- refactor code so we use 'to_cmd_name' in all places where we build them
 #  - remove all '_'
 #  - first upper, rest lower
@@ -958,9 +959,8 @@ def update_cmds_for_cmd_target(f):
     if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
         return
     folder = os.path.dirname(f)
-    name = os.path.splitext(os.path.basename(f))[0].replace('_', '')        # Remove '_' from name
+    name = os.path.splitext(os.path.basename(f))[0]  #.replace('_', '')        # Remove '_' from name
     if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
-    name = '%s%s' % (name[0].capitalize(), name[1:].lower())                # First upper, then rest lower for name
 
     ## SCAN FOR AND ADD BASE CMD LINK
     target = None
@@ -977,6 +977,10 @@ def update_cmds_for_cmd_target(f):
 
     ## ADD 'jXxxx' cmd for folder
     cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)) )
+
+def get_cmd_case(name):
+    name = name.replace('_', '')                            # Remove '_' from name
+    return '%s%s' % (name[0].capitalize(), name[1:])
 
 def target_priority(f):
     "preference among link targets... bigger is better"
