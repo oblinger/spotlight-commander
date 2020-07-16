@@ -3,11 +3,17 @@
 
 import re
 import os
+import sys
+import glob
 import subprocess
 import traceback
 import textwrap
 import time
 import json
+
+# TO DO
+# -- safe scan (user overrides; error when multiple linked)
+#    ok when prior setting is still valid
 
 # when scanning for marker files, sort the hits by MARKER_FILE_TYPES and always link to the first hit
 
@@ -18,7 +24,8 @@ import json
 # -- fix EDITOR thing
 
 
-RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive']  # Roots that 'scan' command starts from
+RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive/ob',       # Roots that 'scan' command starts from
+                '/Volumes/GoogleDrive/My Drive', '/Volumes/GoogleDrive/Shared drives']
 MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
 MARKER_PREFIX = 'About '
 MARKER_DEFAULT_EXTENSION = '.org'
@@ -26,6 +33,7 @@ MARKER_DEFAULT_EXTENSION = '.org'
 TWO_STEP_FIX_RESET_TIME = 200                           # Reset time when the two step reset command revert's back to step 1
 CREATE_JREFS = True                                     # Controls if 'rescan' will create j-prefix commands for each folder
 HOME = os.getenv('HOME')
+SPOTLIGHT_INDEX_FILE = 'spotlight.txt'                  # Index file defines spotlight commands
 LAUNCH_LOG = '%s/.spot_cmdr_launchlog' % HOME
 PARAMS_FILE = '%s/.spot_cmdr_params' % HOME
 CMD_DIR = '%s/cmd' % HOME
@@ -35,7 +43,7 @@ EDITOR = os.getenv('EDITOR', 'open -e')
 APPLET_FOLDER = '/Applications/SpotlightCommander.app/Contents/MacOS'
 PYTHON_LAUNCHER_PREFIX = "#!/usr/bin/env python %s/launcher --launch\n" % APPLET_FOLDER
 KEY_REGEX = re.compile('^# ([^:]*):(.*)$')
-WORD_REGEX = re.compile('^[a-z,A-Z,0-9,-_]*$')
+WORD_REGEX = re.compile('^[a-zA-Z0-9-_]*$')
 ACTIONS = ['app', 'command', 'doc', 'folder', 'none', 'script', 'sh', 'url', 'nstr'] #, 'chrome']
 SHORTCUTS = {'a':'about',    'b':'browser',  'c':'create',   'cp':'copy',          'e':'edit',
              'f':'finder',   'h':'help',     'ls':'list',    'mv':'move',    'nb':'named_browser', 'nf':'named_finder',
@@ -68,6 +76,7 @@ USAGE = \
     rm  --remove        name                REMOVES command
     s   --scan          folder              SCAN folders looking for targets for missing commands  ('=' will use finder folder)
         --set           name type target    CREATE 'name' that links 'typed' 'target'
+        --subtopic      folder              creates a SUBTOPIC in subfolder with named markdown file
         --verify                            scans all commands and VERIFIES their targets are valid
     v   --view          name
     x   --execute       name                EXECUTES 'name'd command
@@ -112,52 +121,52 @@ INFO_PLIST_BODY = \
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleAllowMixedLocalizations</key>
-	<true/>
-	<key>CFBundleDevelopmentRegion</key>
-	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>applet</string>
-	<key>CFBundleIconFile</key>
-	<string>applet</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.apple.ScriptEditor.id.jdata7</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundleName</key>
-	<string>jdata7</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleShortVersionString</key>
-	<string>1.0</string>
-	<key>CFBundleSignature</key>
-	<string>aplt</string>
-	<key>LSMinimumSystemVersionByArchitecture</key>
-	<dict>
-		<key>x86_64</key>
-		<string>10.6</string>
-	</dict>
-	<key>LSRequiresCarbon</key>
-	<true/>
-	<key>WindowState</key>
-	<dict>
-		<key>bundleDividerCollapsed</key>
-		<true/>
-		<key>bundlePositionOfDivider</key>
-		<real>0</real>
-		<key>dividerCollapsed</key>
-		<false/>
-		<key>eventLogLevel</key>
-		<integer>2</integer>
-		<key>name</key>
-		<string>ScriptWindowState</string>
-		<key>positionOfDivider</key>
-		<real>389</real>
-		<key>savedFrame</key>
-		<string>50 32 700 640 0 0 1152 697 </string>
-		<key>selectedTab</key>
-		<string>description</string>
-	</dict>
+    <key>CFBundleAllowMixedLocalizations</key>
+    <true/>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleExecutable</key>
+    <string>applet</string>
+    <key>CFBundleIconFile</key>
+    <string>applet</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.apple.ScriptEditor.id.jdata7</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>jdata7</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleSignature</key>
+    <string>aplt</string>
+    <key>LSMinimumSystemVersionByArchitecture</key>
+    <dict>
+        <key>x86_64</key>
+        <string>10.6</string>
+    </dict>
+    <key>LSRequiresCarbon</key>
+    <true/>
+    <key>WindowState</key>
+    <dict>
+        <key>bundleDividerCollapsed</key>
+        <true/>
+        <key>bundlePositionOfDivider</key>
+        <real>0</real>
+        <key>dividerCollapsed</key>
+        <false/>
+        <key>eventLogLevel</key>
+        <integer>2</integer>
+        <key>name</key>
+        <string>ScriptWindowState</string>
+        <key>positionOfDivider</key>
+        <real>389</real>
+        <key>savedFrame</key>
+        <string>50 32 700 640 0 0 1152 697 </string>
+        <key>selectedTab</key>
+        <string>description</string>
+    </dict>
 </dict>
 </plist>
 """
@@ -212,6 +221,7 @@ TARGET: /ob-large/ToTrash
 TARGET: /, Root
 TARGET: /Applications
 TARGET: /Users/oblinger
+TARGET: /Users/oblinger/Documents
 TARGET: /Users/oblinger/Downloads
 TARGET: /Users/oblinger/Dropbox
 TARGET: /Users/oblinger/templates
@@ -287,13 +297,13 @@ def main():
     if not os.path.exists('%s/ctrl' % APPLET_FOLDER):
         print "Copy the app into the /Applications folder and re-run."
         error("Application must run from the /Applications folder.")
-    argv = os.sys.argv
+    argv = sys.argv
     #argv = ['', 'two_step_fix']
     if len(argv)<2:
         cmd_install(reinstall=False)
         argv= ['cmd'] + raw_input('CMD> ').split()
         if len(argv)<=1:
-            os.sys.exit(0)
+            sys.exit(0)
     a1 = argv[1] if len(argv)>1 else ''
 
     if a1[0:2]=='--':     base = a1[2:]
@@ -316,10 +326,10 @@ def main():
 
 def cmd_about():
     folder = arg(1, default=None) or get_finder_path()
-    file = '%s/%s%s%s' % (folder, MARKER_PREFIX, os.path.basename(folder), MARKER_DEFAULT_EXTENSION)
-    with open(file, 'w') as f:
+    f = '%s/%s%s%s' % (folder, MARKER_PREFIX, os.path.basename(folder), MARKER_DEFAULT_EXTENSION)
+    with open(f, 'w') as f:
         pass
-    cmd_scan(file)
+    cmd_scan(f)
 
 
 
@@ -341,6 +351,7 @@ def cmd_copy():
 
 
 def cmd_create():
+    """Create new linked entity.  [folder] [name.template]"""
     dest_folder = arg(1, prompt='Enter destination folder')
     if dest_folder=='=':
         dest_folder = get_finder_path()
@@ -354,14 +365,15 @@ def cmd_create():
     for suffix in os.listdir(TEMPLATES_DIR):
         if suffix.lower().startswith(t_name+'.'):
             dest = '%s%s' % (f_name, os.path.splitext(suffix)[1])
+            os.makedirs(dest_folder)
             os.system('cp "%s/%s" "%s"' % (TEMPLATES_DIR, suffix, dest_folder))
             os.system('cd "%s" ; mv "%s" "%s"' % (dest_folder, os.path.basename(suffix), dest))
+            cmd_scan(dest_folder)
             return
     error('Could not find template named %r' % t_name)
 
 
 def cmd_dano(lines=DANO_FOLDERS):
-    z=lines.split('\n')
     print "RECREATING STANDARD FOLDER LINKS"
     for line in lines.split('\n'):
         if line.startswith('TARGET: '):
@@ -427,6 +439,7 @@ def cmd_finder(name=None):
 def cmd_fix(name=None):
     cap       = get_current_link_while_in_console()
     cap[NAME] = name or last_command_name()
+    clear_screen()
     if cap[NAME]:
         print "Enter 'y' to update command %r" % cap[NAME].upper()
         print ""
@@ -439,25 +452,25 @@ def cmd_fix(name=None):
     print "    (Command action may be:  doc, folder, app, command, script.)"
     print "\n"
     prompt = 'Fix %r [y/n]' % cap[NAME] if cap[NAME] else 'Command to fix'
-    input = user_input(prompt).strip()
-    if input.lower() in ['', 'n']:
+    inp = user_input(prompt).strip()
+    if inp.lower() in ['', 'n']:
         return
     ## Parse NAME
-    if '=' in input:
-        idx = input.index('=')
-        cap[NAME]=input[:idx].strip()
-        input = input[idx+1:].strip()
+    if '=' in inp:
+        idx = inp.index('=')
+        cap[NAME]=inp[:idx].strip()
+        inp = inp[idx+1:].strip()
     ## Parse ACTION
-    parsed_action = input[0:input.index(' ')].lower() if ' ' in input else None
+    parsed_action = inp[0:inp.index(' ')].lower() if ' ' in inp else None
     if parsed_action and parsed_action in ACTIONS:        # Handle action prefix
-        input = input[len(parsed_action):]
+        inp = inp[len(parsed_action):]
     else:
         parsed_action = None
     ## Compute TARGET
-    input = input.strip()
-    if input!='' and input!='y':
+    inp = inp.strip().replace("\\ ", " ")
+    if inp!='' and inp!='y':
         cap[ACTION]=None
-        cap[TARGET]=input
+        cap[TARGET]=inp
     ## Compute ACTION
     if parsed_action:
         cap[ACTION]=parsed_action
@@ -465,6 +478,8 @@ def cmd_fix(name=None):
         cap[ACTION] = infer_action(cap[TARGET], error=False)
     if cap.get(ACTION):
         cap_set(cap, verbose=True)
+    else:
+        print "No action specified."
 
 
 def cmd_folder():
@@ -473,7 +488,7 @@ def cmd_folder():
         folder = get_finder_path()
     name   = arg(2, prompt='Enter folder name to create under %r' % folder)
     new_folder = os.path.join(folder, name)
-    new_about  = "%s/%s%s%s" % (new_folder, MARKER_PREFIX, name, MARKER_DEFAULT_EXTENSION)
+    new_about  = "%s/%s%s%s" % (new_folder, MARKER_PREFIX, get_cmd_case(name), MARKER_DEFAULT_EXTENSION)
     print "### CREATING %s" % new_about
     if not os.path.exists(new_folder):
         os.makedirs(new_folder)
@@ -499,6 +514,10 @@ def cmd_install(reinstall=True):
     if not reinstall and os.path.exists(CMD_DIR):
         return
     print '\nCREATING SPOTLIGHT-COMMANDER COMMANDS\n'
+    if not os.path.exists(TEMPLATES_DIR):
+        os.makedirs(TEMPLATES_DIR)
+    print('### Refreshing ~/templates folder')
+    os.system('cp -r "%s/../Resources/templates" "%s/.."' % (APPLET_FOLDER, TEMPLATES_DIR))
     script = '%s/ctrl' % APPLET_FOLDER
     if not os.path.exists(CMD_DIR):
         print 'Creating folder %r' % CMD_DIR
@@ -510,6 +529,7 @@ def cmd_install(reinstall=True):
     cap_set({NAME:'FOLDER',  ACTION:'command', TARGET:'%s folder =' % script, IO: 'pinned'},  verbose=True)
     cap_set({NAME:'ABOUT',   ACTION:'command', TARGET:'%s about'    % script},                verbose=True)
     cap_set({NAME:'SCAN',    ACTION:'command', TARGET:'%s scan ='   % script, IO: 'pinned'},  verbose=True)
+    cap_set({NAME:'SUBTOPIC',ACTION:'command', TARGET:'%s subtopic ='   % script, IO: 'pinned'},  verbose=True)
 
     cap_set({NAME:'cmdCOPY', ACTION:'command', TARGET:'%s cp {prompt}' % script, IO: 'pinned',
                 PROMPT: 'CMD COPY.  Enter source & dest: '}, verbose=True)
@@ -605,19 +625,33 @@ def cmd_scan(*roots):
     arg1 = arg(1, default=None)
     if len(roots)!=0:
         pass
-    elif arg1==None:
+    elif arg1 is None:
         roots = RESCAN_ROOTS
-    elif arg1=='=':
+    elif arg1 == '=':
         roots = [get_finder_path()]
     else:
         roots = [arg1]
-    print "### SCANNING FOLDERS UNDER, %s, FOR 'About ...' TARGETS" % ', '.join(roots)
-    for root in roots:
-        if is_cmd_marker_file(root):
-            update_cmds_for_cmd_target(root)
-        #else:
-        for f in recursive_file_gen(root):
-            update_cmds_for_cmd_target(f)
+    print "### SCANNING FOLDERS UNDER, %s, FOR '__XXX__.md' HOOK FILES" % ', '.join(roots)
+    scan_roots(roots)
+
+# def cmd_scan(*roots):
+#     arg1 = arg(1, default=None)
+#     if len(roots)!=0:
+#         pass
+#     elif arg1==None:
+#         roots = RESCAN_ROOTS
+#     elif arg1=='=':
+#         roots = [get_finder_path()]
+#     else:
+#         roots = [arg1]
+#     print "### SCANNING FOLDERS UNDER, %s, FOR 'About ...' TARGETS" % ', '.join(roots)
+#     for root in roots:
+#         if is_cmd_marker_file(root):
+#             update_cmds_for_cmd_target(root)
+#         #else:
+#         for f in recursive_file_gen(root):
+#             # print("checking %r" % f)
+#             update_cmds_for_cmd_target(f)
 
 
 def cmd_scrub():
@@ -628,9 +662,9 @@ def cmd_scrub():
         if cap[ACTION] in ['doc', 'folder']:
             print "### DELETING %s --> %s" % (cap[NAME], cap[TARGET])
             cap_delete(cap)
-    print;
+    print
     cmd_dano()
-    print;
+    print
     cmd_scan()
 
 
@@ -641,6 +675,22 @@ def cmd_set():
     target = arg(3, prompt='Cap target', error_string='Target required')
     keys = {FOLDER:CMD_DIR, NAME:name, ACTION:action, TARGET:target}
     cap_set(keys)
+
+# XXXX working on this
+def cmd_subtopic():
+    """Subtopic folder creation"""
+    parent = arg(1, prompt='Parent folder', error_string='Folder required.')
+    sub    = arg(2, prompt='Name of subfolder to create', error_string='Sub folder name required.')
+    if parent=='=':  parent = get_finder_path()
+    folder = "%s/%s" % (parent, sub)
+    print("Creating folder '%s'" % (folder,))
+    if not os.path.exists(folder):  os.makedirs(folder)
+    f = "%s/%s.md" % (folder, sub)
+    print("Creating file '%s'" % (f,))
+    os.system("touch '%s'" % (f,))
+    cmd_scan(folder)
+    #update_cmds_for_cmd_target(folder)
+
 
 
 # BUG what about when there is no last command or curr cap???
@@ -716,13 +766,13 @@ def cmd_two_step_fix():
         send_key(53)
         time.sleep(1)
         name = get_clipboard()
-        if len(name)>2 and len(name)<20 and re.match(WORD_REGEX, name):
+        if 2 < len(name) < 20 and re.match(WORD_REGEX, name):
             params(fix_time=now, fix_command=name)
 
 
 def cmd_usage():
     print USAGE
-    os.sys.stdout.write('HIT RETURN TO EXIT')
+    sys.stdout.write('HIT RETURN TO EXIT')
     raw_input()
 
 
@@ -886,21 +936,6 @@ def cap_set(cap, **kwargs):
     #cap_set_jcap(cap, verbose)
 
 
-#### NOTE:  2015-6-1  removed auto jXXXX, now cmd_scan adds these, but only for marker files.
-####        idea is to move to only having jXXXX links when there is a marker file
-
-def cap_set_jcap_XXXXXXXXXXXX(cap, verbose):
-    """adds the shadow 'j...' command each time the main command is updated."""
-    if cap[ACTION] != 'doc' or not CREATE_JREFS:
-        return
-    folder = os.path.dirname(cap[TARGET])
-    jname = cap[NAME]
-    jname = 'j%s' % (jname[1:] if jname[0]=='a' else jname)
-    if verbose:
-        print '### FOLDER link: %r to %r' % (jname, folder)
-    cap_set({NAME:jname, ACTION:'folder', TARGET:folder}, verbose=False)
-
-
 def cap_delete(cap):
     """Deletes a cap entry."""
     path = cap_path(cap)
@@ -932,7 +967,147 @@ def cap_desc(cap, max_len=74):
     return clip(desc, max_len)
 
 
+### --- SCAN SUPPORT ---
 
+def scan_roots(roots):
+    result_maps = []
+    for root in roots:
+        for f in recursive_file_gen(root):
+            result_maps += scan_file(f)
+    result_maps = scan_trim_result_maps(result_maps)
+    scan_process_result_maps(result_maps)
+
+
+def scan_file(f):
+    result_maps = []
+    if os.path.basename(f)==SPOTLIGHT_INDEX_FILE:
+        result_maps += scan_cmds_for_spotlight_index_file(f)
+    if not is_hook_file(f):
+        return result_maps
+    name = file_stripped_base(f)
+    folder = os.path.dirname(f)
+    others = glob.glob("%s/%s.*" % (folder, name))
+    if name == file_stripped_base(folder):
+        result_maps.append(dict(name="j"+name, action="folder", target=folder))  #os.path.realpath(target)))
+    if len(others)==1:
+        result_maps.append(dict(name=name, action="doc", target=others[0]))
+        result_maps.append(dict(name="a"+name, action="doc", target=f))
+    else:
+        result_maps.append(dict(name=name, action="doc", target=f))
+    return result_maps
+
+
+def scan_trim_result_maps(result_maps):
+    new_result_maps = []
+    for m in result_maps:
+        if 'target' in m and m['target'].startswith("/"):
+            m['target'] = os.path.realpath(m['target'])
+        cap_file = "%s/%s.app" % (CMD_DIR, m['name'])
+        old_cap = cap_get(cap_file) or {}
+        new_cap = dict(old_cap)
+        new_cap.update(m)
+        old_target = old_cap.get('target')
+        new_target = new_cap['target']
+        if old_target is not None and old_target!=new_target and os.path.exists(old_target):
+            print("### WARNING:  Ignoring update to %r since target %r still exists.  new target = %s" %
+                  (old_cap['name'], old_cap['target'], new_cap['target']))
+        elif new_cap != old_cap:
+            new_result_maps.append(new_cap)
+            # print(">>> OLD=%s\n    NEW=%s" % (old_cap, new_cap))
+    return new_result_maps
+
+
+def scan_process_result_maps(result_maps):
+    for m in result_maps:
+        print("    >  Update %r to:  %s" % (m['name'], cap_desc(m, 300)))
+
+    print("")
+    if len(result_maps)>5:
+        action = user_input("Perform Updates?  [a]ll, [n]one, [p]rompt").lower()
+    else:
+        action = 'a'
+    print("")
+    if action not in ['a', 'p']:
+        return
+
+    for m in result_maps:
+        prompt = "    Update %r to:  %s" % (m['name'], cap_desc(m, 300))
+        if action=='a' or yes_or_no(prompt, "y"):
+            cap_set(m)
+
+
+def scan_cmds_for_spotlight_index_file(f):
+    result_maps = []
+    with open(f) as datafile:
+        lines=datafile.readlines()
+    for line in lines:
+        parts = line.split(None, 2)
+        if line.strip() == '' or line[0] == "#":
+            pass
+            # print("### " + line)
+        elif len(parts)!=3:
+            print "Illegal command spec %r in %s" % (line, f)
+        else:
+            name, action, rest = parts
+            args = scan_cmds_for_spotlight_index_file_regex.split(rest)
+            args = map(str.strip, args)
+            target = args[0].strip()
+            d = dict(name=name, action=action, target=target)
+            if 'prompt: ' in args: d['prompt'] = args[args.index('prompt: ') + 1]
+            if 'io: ' in args: d['io'] = args[args.index('io: ') + 1]
+            result_maps.append(d)
+            #cap_set( d, verbose=True )
+    return result_maps
+
+scan_cmds_for_spotlight_index_file_regex = re.compile('(prompt: |io: )')
+
+
+def is_hook_file(f):
+    base = os.path.basename(f).lower()
+    parts = os.path.splitext(base)
+    return parts[0].startswith("__") and parts[0].endswith("__") and parts[1]==".md"
+
+def file_stripped_base(f):
+    base = os.path.basename(f).lower()
+    parts = os.path.splitext(base)
+    stripped = parts[0].strip("_")
+    return stripped
+
+
+# --- run once to cleanup old file formats ---
+
+def run_once_manual_moves():
+    for root in ['/ob', '/Users/oblinger/GoogleDrive', '/Volumes/GoogleDrive/My Drive']:
+        for f in recursive_file_gen(root):
+            new_hook = get_new_hook_for_org_md(f)
+            if not new_hook or os.path.exists(new_hook):
+                continue
+            elif os.path.splitext(new_hook)[1]==os.path.splitext(f)[1]:
+                line = '''mv "%s" "%s" ''' % (f, new_hook)
+            else:
+                line = '''touch "%s" # %s''' % (new_hook, f)
+            print line
+
+def get_new_hook_for_org_md(f):
+    folder = os.path.dirname(f)
+    base = os.path.basename(f)
+    name, ext = os.path.splitext(base)
+    name = name.strip("_")
+    if ext not in [".md", ".org"]:
+        return None
+    if name.lower() != os.path.basename(folder).lower():
+        return None
+    return "%s/__%s__.md" % (folder, name)
+
+def get_new_hook_for_about(f):
+    folder = os.path.dirname(f)
+    base = os.path.basename(f)
+    if not base.startswith('About '):
+        return None
+    base = os.path.splitext(base[6:])[0].lower()
+    if base != os.path.basename(folder).lower():
+        return None
+    return "%s/__%s__.md" % (folder, base)
 
 
 
@@ -940,38 +1115,81 @@ def cap_desc(cap, max_len=74):
 ###############################################################################
 ###   SUPPORT FUNCTIONS
 
-
+# Marker File Rules (see is_cmd_markder_file)
+# - Exclude any files that have "archive" or "old" in their path
+# - Exclude any names >20 characters 
+# - Exclude any names beginning with digits
+# - Exclude files that do not end with MARKER_FILE_TYPES
+# - folder name and base names must match when lowercaseed and stripped of "_"
+#
 def is_cmd_marker_file(f):
     folder = os.path.dirname(f)
-    parent = os.path.basename(folder).lower()
+    parent = os.path.basename(folder).lower().strip("_")
     parts   = os.path.splitext(os.path.basename(f).lower())
-    return parts[0].startswith(MARKER_PREFIX.lower()) or \
-           (parts[0]== parent and parts[1] in MARKER_FILE_TYPES)
+    ext = parts[1].lower()
+    base = parts[0].lower().strip("_")
+    if base.startswith(MARKER_PREFIX.lower()):
+        base = base[len(MARKER_PREFIX):]
+    # print(">>> Checking:   parent=%r  base=%r  ext=%r  folder=%r" % (parent, base, ext, folder))
+    if folder.lower().find('old')!=-1 or folder.lower().find('archive')!=-1:
+        return False
+    if len(base)>20:
+        return False
+    if not base or '0' <= base[0] <= '9':
+        return False
+    if ext not in MARKER_FILE_TYPES:
+        return False
+    return base == parent
 
 
 def update_cmds_for_cmd_target(f):
     f = os.path.realpath(f)
-    if not is_cmd_marker_file(f):                                           # EXIT if file is not a cmd marker
-        return
-    folder = os.path.dirname(f)
-    name = os.path.splitext(os.path.basename(f))[0]  #.replace('_', '')        # Remove '_' from name
-    if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
+    if os.path.basename(f)==SPOTLIGHT_INDEX_FILE:
+        update_cmds_for_spotlight_index_file(f)
+    elif is_cmd_marker_file(f):                             # process file cmd marker
+        folder = os.path.dirname(f)
+        name = os.path.splitext(os.path.basename(f))[0]  #.replace('_', '')        # Remove '_' from name
+        if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
+        if name.startswith("_"): name = name[1:]
 
-    ## SCAN FOR AND ADD BASE CMD LINK
-    target = None
-    for suffix in os.listdir(folder):
-        if os.path.splitext(suffix)[0].lower() == name.lower() and target_priority(target)<target_priority(suffix):
-            target = os.path.join(folder, suffix)
-    if target:
-        cap_set( dict(action='doc', name=name, target=os.path.realpath(target)), verbose=True )
+        ## SCAN FOR AND ADD BASE CMD LINK
+        target = None
+        for suffix in os.listdir(folder):
+            if os.path.splitext(suffix)[0].lower() == name.lower() and target_priority(target)<target_priority(suffix):
+                target = os.path.join(folder, suffix)
+        if target:
+            cap_set( dict(action='doc', name=name, target=os.path.realpath(target)), verbose=True )
 
-    ## ADD 'aXxxx' cmd for 'About ...' files
-    if os.path.basename(f).startswith(MARKER_PREFIX):
-        a_cap = dict(action='doc', name='a%s' % name, target=os.path.realpath(f))                                         # maybe can remove all of these internal 'readpath'  calls?
-        cap_set(a_cap, verbose=True)
+        ## ADD 'aXxxx' cmd for 'About ...' files
+        if os.path.basename(f).startswith(MARKER_PREFIX):
+            cap_set( dict(action='doc', name='a%s' % name, target=os.path.realpath(f)), verbose=True )         # maybe can remove all of these internal 'readpath'  calls?
+            cap_set( dict(action='folder', name=name, target=os.path.realpath(folder)), verbose=True )
+        else:
+            cap_set( dict(action='doc', name=name, target=os.path.realpath(f)), verbose=True )
 
-    ## ADD 'jXxxx' cmd for folder
-    cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)) )
+        ## ADD 'jXxxx' cmd for folder
+        cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)), verbose=True )
+
+
+def update_cmds_for_spotlight_index_file(f):
+    with open(f) as datafile:
+        lines=datafile.readlines()
+    for line in lines:
+        parts = line.split(None, 2)
+        if line.strip() == '' or line[0] == "#":
+            print("### " + line)
+        elif len(parts)!=3:
+            print "Illegal command spec %r in %s" % (line, f)
+        else:
+            name, action, rest = parts
+            args = update_cmds_for_spotlight_index_file_regex.split(rest)
+            target = args[0].strip()
+            d = dict(name=name, action=action, target=target)
+            if 'prompt: ' in args: d['prompt'] = args[args.index('prompt: ') + 1]
+            if 'io: ' in args: d['io'] = args[args.index('io: ') + 1]
+            cap_set( d, verbose=True )
+
+update_cmds_for_spotlight_index_file_regex = re.compile('(prompt: |io: )')
 
 
 def get_cmd_case(name):
@@ -979,7 +1197,7 @@ def get_cmd_case(name):
     return '%s%s' % (name[0].capitalize(), name[1:])
 
 def target_priority(f):
-    "preference among link targets... bigger is better"
+    """preference among link targets... bigger is better"""
     if not f:
         return 0
     ext = os.path.splitext(f)[1].lower()
@@ -999,6 +1217,7 @@ def infer_action(target, **kwargs):
             return 'doc'
         if err:
             error('Target file %r does not exist' % target)
+        return 'doc'        # default if type is not known
     if err:
         error('Use full url/path.  Cannot tell if target is a file, folder, or URL.')
     return None
@@ -1022,9 +1241,10 @@ def params(**updates):
 
 def get_current_link_while_in_console():
     send_key(48, 'command down')
-    #time.sleep(0.2)
+    #sleep(0.2)
     cur_cap = get_current_link()
-    send_key(48, 'command down')
+    #send_key(48, 'command down')   removed after macos high sierra
+    send_key(53)  # added after macos high sierra
     return cur_cap
 
 def get_current_link():
@@ -1047,13 +1267,13 @@ def get_current_link():
 
 def last_command_name():
     """Returns the last launched command that is not in the ignore list."""
-    IGNORE = ['ss', 'ss1', 'fix']
-    def get_name(args):
-        fldr = os.path.dirname(os.path.dirname(os.path.dirname(args[0])))
+    ignore = ['ss', 'ss1', 'fix']
+    def get_name(args_):
+        fldr = os.path.dirname(os.path.dirname(os.path.dirname(args_[0])))
         return os.path.splitext(os.path.basename(fldr))[0].encode('utf-8')
     names = [get_name(args) for args in last_commands(20)]
     #print "Last commands: %s" % ', '.join(names)
-    names = [n for n in names if n.lower() not in IGNORE]
+    names = [n for n in names if n.lower() not in ignore]
     return names[-1] if len(names)>0 else None
 
 def last_commands(n):
@@ -1067,8 +1287,8 @@ def last_commands(n):
 def recursive_file_gen(mydir):
     """Generator for all files recursively under 'mydir'"""
     for root, dirs, files in os.walk(mydir):
-        for file in files:
-            yield os.path.join(root, file)
+        for f in files:
+            yield os.path.join(root, f)
 
 def write_file(path, contents):
     with open(path,'w') as f:
@@ -1081,8 +1301,8 @@ def read_file(path):
 def clear_screen():
     print '\033[0;0H\033[2J'
 
-def clip(str, l):
-    return str if len(str)<=l else '%s...' % str[:l-3]
+def clip(s, l):
+    return s if len(s) <= l else '%s...' % s[:l - 3]
 
 
 def arg(num, **kwargs):
@@ -1092,8 +1312,8 @@ def arg(num, **kwargs):
     error_string  = kwargs.get('error_string',
                                'Command is missing required argument #%s.' % num)
     if default_value:   prompt = '%s (%s)' % (prompt, default_value)
-    if len(os.sys.argv)>num+1:
-        return os.sys.argv[num+1]
+    if len(sys.argv)>num+1:
+        return sys.argv[num+1]
     if 'prompt' in kwargs:
         value = raw_input(prompt+': ')
         if value.strip() != '':
@@ -1102,21 +1322,21 @@ def arg(num, **kwargs):
         return default_value
     error(error_string)
 
-def yes_or_no(str, default=''):
+def yes_or_no(s, default=''):
     suffix = ' [Y/n]? ' if default=='y' else ' [y/N]? '
-    return 'y' == (raw_input(str+suffix) or default).strip()[0:1].lower()
+    return 'y' == (raw_input(s + suffix) or default).strip()[0:1].lower()
 
 def user_input(prompt, default_value=''):
     dv =  ' (%s)' % default_value if default_value else ''
     val = raw_input(prompt+dv+': ')
     return val or default_value
 
-def user_input_no_console(prompt, default_value=''):
+def user_input_no_console(prompt, _=None):
     return system_to_str('%s/launcher'% (APPLET_FOLDER,), '--prompt', prompt)
 
 def error(err_str):
     raw_input("\n\nERROR: %s\n\n(press RETURN to exit)" % err_str)
-    os.sys.exit(1)
+    sys.exit(1)
 
 
 
@@ -1150,7 +1370,11 @@ def get_finder_selection_path():
 def get_finder_path():
     """Returns path to folder in the top finder window"""
     path = osa_fn('tell application "Finder" to return POSIX path of ((folder of the front window) as text)')
-    if path[-1]=='/': path = path[:-1] # Remove trailing '/'
+    if len(path)>0 and path[-1]=='/': path = path[:-1] # Remove trailing '/'
+    if os.path.exists(path):
+        return path
+    if os.path.exists("/Volumes"+path):	# Check if path is actually path to an external volume
+        path = "/Volumes"+path
     return path
 
 def get_chrome_url():
@@ -1180,7 +1404,7 @@ def set_clipboard(data):
     p = subprocess.Popen(['pbcopy'], stdin=subprocess.PIPE)
     p.stdin.write(data)
     p.stdin.close()
-    retcode = p.wait()
+    _retcode = p.wait()
 
 
 def get_app_in_focus():
@@ -1221,5 +1445,7 @@ def system_to_str(*arglist):
     return stdout.rstrip()
 
 
-#cmd_scan('/ob/topics/txt') #Users/oblinger/Google Drive/NDA_ALL') #'/ob/topics/Life')
-main()
+if __name__=='__main__':
+    # run_once_manual_moves()
+    # cmd_scan()  #'/ob', '/Users/oblinger/GoogleDrive/', '/Volumes/GoogleDrive/My Drive')
+    main()

@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 # (C) Copyright 2014- Dan Oblinger  <code@oblinger.us>
 
+# BUG:  LSOpenURLsWithRole() failed with error -10810 for the file /Users/oblinger/cmd/PyCharm.app.
+# https://apple.stackexchange.com/questions/181026/lsopenurlswithrole-failed-with-error-10810-cant-open-install-os-x-yosemite
+
+
 import os
 import re
 import time
@@ -83,21 +87,25 @@ def cmd_launch(applet_path, now_in_console):
         raw_input('\n(press RETURN to exit)')
 
 
-def type_app(keys):
-    run('open "%s"' % keys[TARGET])
+def type_app(keys):     open_target("", keys)
+def type_doc(keys):     open_target("", keys)
+def type_edit(keys):    open_target("-e", keys)
+def type_folder(keys):  open_target("", keys)
+def open_target(prefix, keys):
+    target = keys[TARGET]
+    if os.path.exists(target):
+        print "fojnd %r" % target
+        run('open %s "%s"' % (prefix, target))
+    else:
+        error("Could not find %r" % target)
 def type_console(keys):
     print 'Triggering console'
     osa('tell application "Terminal" to do script "echo hello"')
-def type_doc(keys):
-    run('open "%s"' % keys[TARGET])
-def type_edit(keys):
-    run('open -e "%s"' % keys[TARGET])
-def type_folder(keys):
-    run('open "%s"' % keys[TARGET])
+
 def type_none(keys):
     pass
 def type_nstr(keys):
-    osa('tell application "growl" to activate')
+    #osa('tell application "growl" to activate')
     write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
     osa('tell application "Notester" to activate')
 # def type_python(keys):

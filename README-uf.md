@@ -1,4 +1,6 @@
 
+=== OLD ===
+
 
 <h4>
 UNIFORM provides for SOURCE-CODE what <br>
@@ -427,7 +429,7 @@ Lisp, uniform uses the familiar C/Java/Python expression syntax,
 instead of the non-standard (and hard-to-read) parenthesis notation of
 Lisp.  Further Uniform's underlying data-structure is the extremely
 prevalent JSON object form whereas Lisp is built on the less commonly
-used sexpr data structure.
+used sexpr data structure.kl
 
 At the bottom, all uniform source-code maps to a recursive application 
 of the "UNI"-form itself.  The simplest presentation of the uni-form 
@@ -441,8 +443,8 @@ The uni-form also maps trivially onto the JSON object notation:
 
 In uniform, values can either be a sub-uniform expression, or a JSON constant value like a string or number.  That's it.  That is the uni-form data structure.
 
-##  xxx
-
+##  xxxkl
+kl
 
 
 
