@@ -1044,7 +1044,6 @@ def scan_cmds_for_spotlight_index_file(f):
         parts = line.split(None, 2)
         if line.strip() == '' or line[0] == "#":
             pass
-            # print("### " + line)
         elif len(parts)!=3:
             print "Illegal command spec %r in %s" % (line, f)
         else:
@@ -1056,7 +1055,6 @@ def scan_cmds_for_spotlight_index_file(f):
             if 'prompt: ' in args: d['prompt'] = args[args.index('prompt: ') + 1]
             if 'io: ' in args: d['io'] = args[args.index('io: ') + 1]
             result_maps.append(d)
-            #cap_set( d, verbose=True )
     return result_maps
 
 scan_cmds_for_spotlight_index_file_regex = re.compile('(prompt: |io: )')
@@ -1142,54 +1140,55 @@ def is_cmd_marker_file(f):
     return base == parent
 
 
-def update_cmds_for_cmd_target(f):
-    f = os.path.realpath(f)
-    if os.path.basename(f)==SPOTLIGHT_INDEX_FILE:
-        update_cmds_for_spotlight_index_file(f)
-    elif is_cmd_marker_file(f):                             # process file cmd marker
-        folder = os.path.dirname(f)
-        name = os.path.splitext(os.path.basename(f))[0]  #.replace('_', '')        # Remove '_' from name
-        if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
-        if name.startswith("_"): name = name[1:]
-
-        ## SCAN FOR AND ADD BASE CMD LINK
-        target = None
-        for suffix in os.listdir(folder):
-            if os.path.splitext(suffix)[0].lower() == name.lower() and target_priority(target)<target_priority(suffix):
-                target = os.path.join(folder, suffix)
-        if target:
-            cap_set( dict(action='doc', name=name, target=os.path.realpath(target)), verbose=True )
-
-        ## ADD 'aXxxx' cmd for 'About ...' files
-        if os.path.basename(f).startswith(MARKER_PREFIX):
-            cap_set( dict(action='doc', name='a%s' % name, target=os.path.realpath(f)), verbose=True )         # maybe can remove all of these internal 'readpath'  calls?
-            cap_set( dict(action='folder', name=name, target=os.path.realpath(folder)), verbose=True )
-        else:
-            cap_set( dict(action='doc', name=name, target=os.path.realpath(f)), verbose=True )
-
-        ## ADD 'jXxxx' cmd for folder
-        cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)), verbose=True )
-
-
-def update_cmds_for_spotlight_index_file(f):
-    with open(f) as datafile:
-        lines=datafile.readlines()
-    for line in lines:
-        parts = line.split(None, 2)
-        if line.strip() == '' or line[0] == "#":
-            print("### " + line)
-        elif len(parts)!=3:
-            print "Illegal command spec %r in %s" % (line, f)
-        else:
-            name, action, rest = parts
-            args = update_cmds_for_spotlight_index_file_regex.split(rest)
-            target = args[0].strip()
-            d = dict(name=name, action=action, target=target)
-            if 'prompt: ' in args: d['prompt'] = args[args.index('prompt: ') + 1]
-            if 'io: ' in args: d['io'] = args[args.index('io: ') + 1]
-            cap_set( d, verbose=True )
-
-update_cmds_for_spotlight_index_file_regex = re.compile('(prompt: |io: )')
+# Refactored 2020.07.15 - new code is "scan_"
+# def update_cmds_for_cmd_target(f):
+#     f = os.path.realpath(f)
+#     if os.path.basename(f)==SPOTLIGHT_INDEX_FILE:
+#         update_cmds_for_spotlight_index_file(f)
+#     elif is_cmd_marker_file(f):                             # process file cmd marker
+#         folder = os.path.dirname(f)
+#         name = os.path.splitext(os.path.basename(f))[0]  #.replace('_', '')        # Remove '_' from name
+#         if name.startswith(MARKER_PREFIX): name = name[len(MARKER_PREFIX):]
+#         if name.startswith("_"): name = name[1:]
+#
+#         ## SCAN FOR AND ADD BASE CMD LINK
+#         target = None
+#         for suffix in os.listdir(folder):
+#             if os.path.splitext(suffix)[0].lower() == name.lower() and target_priority(target)<target_priority(suffix):
+#                 target = os.path.join(folder, suffix)
+#         if target:
+#             cap_set( dict(action='doc', name=name, target=os.path.realpath(target)), verbose=True )
+#
+#         ## ADD 'aXxxx' cmd for 'About ...' files
+#         if os.path.basename(f).startswith(MARKER_PREFIX):
+#             cap_set( dict(action='doc', name='a%s' % name, target=os.path.realpath(f)), verbose=True )         # maybe can remove all of these internal 'readpath'  calls?
+#             cap_set( dict(action='folder', name=name, target=os.path.realpath(folder)), verbose=True )
+#         else:
+#             cap_set( dict(action='doc', name=name, target=os.path.realpath(f)), verbose=True )
+#
+#         ## ADD 'jXxxx' cmd for folder
+#         cap_set( dict(action='folder', name='j%s' % name, target=os.path.realpath(folder)), verbose=True )
+#
+#
+# def update_cmds_for_spotlight_index_file(f):
+#     with open(f) as datafile:
+#         lines=datafile.readlines()
+#     for line in lines:
+#         parts = line.split(None, 2)
+#         if line.strip() == '' or line[0] == "#":
+#             print("### " + line)
+#         elif len(parts)!=3:
+#             print "Illegal command spec %r in %s" % (line, f)
+#         else:
+#             name, action, rest = parts
+#             args = update_cmds_for_spotlight_index_file_regex.split(rest)
+#             target = args[0].strip()
+#             d = dict(name=name, action=action, target=target)
+#             if 'prompt: ' in args: d['prompt'] = args[args.index('prompt: ') + 1]
+#             if 'io: ' in args: d['io'] = args[args.index('io: ') + 1]
+#             cap_set( d, verbose=True )
+#
+# update_cmds_for_spotlight_index_file_regex = re.compile('(prompt: |io: )')
 
 
 def get_cmd_case(name):
