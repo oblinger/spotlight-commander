@@ -12,7 +12,7 @@ import traceback
 import json
 import subprocess
 
-RUN_PREFIX = 'export HOME=/Users/oblinger ; source ~/.bash_profile ; '
+RUN_PREFIX = 'export HOME=/Users/oblinger ; source ~/.zprofile ; '
 debug=False
 launcher_keys = None    # This is set to the 'keys' parsed from the launcher
 
@@ -106,7 +106,7 @@ def type_none(keys):
     pass
 def type_nstr(keys):
     #osa('tell application "growl" to activate')
-    write_file('/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
+    write_file('/Users/oblinger/ob/data/notester/mac/control.txt', 'GOTO\n%s' % keys[TARGET])
     osa('tell application "Notester" to activate')
 # def type_python(keys):
 #     return type_script(keys, 'python')

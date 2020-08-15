@@ -24,11 +24,12 @@ import json
 # -- fix EDITOR thing
 
 
-RESCAN_ROOTS = ['/ob', '/Users/oblinger/Google Drive/ob',       # Roots that 'scan' command starts from
-                '/Volumes/GoogleDrive/My Drive', '/Volumes/GoogleDrive/Shared drives']
+RESCAN_ROOTS = ['/Users/oblinger/ob',       # Roots that 'scan' command starts from
+                '/Volumes/Google Drive/My Drive', '/Volumes/Google Drive/Shared drives']
 MARKER_FILE_TYPES = ['.org', '.md', '.gdoc']
 MARKER_PREFIX = 'About '
 MARKER_DEFAULT_EXTENSION = '.org'
+scan_force_update = False
 
 TWO_STEP_FIX_RESET_TIME = 200                           # Reset time when the two step reset command revert's back to step 1
 CREATE_JREFS = True                                     # Controls if 'rescan' will create j-prefix commands for each folder
@@ -987,13 +988,16 @@ def scan_file(f):
     name = file_stripped_base(f)
     folder = os.path.dirname(f)
     others = glob.glob("%s/%s.*" % (folder, name))
-    if name == file_stripped_base(folder):
-        result_maps.append(dict(name="j"+name, action="folder", target=folder))  #os.path.realpath(target)))
+    if name == file_stripped_base(folder).lower():
+        result_maps.append(dict(name="j"+name.lower(), action="folder", target=folder))  #os.path.realpath(target)))
     if len(others)==1:
-        result_maps.append(dict(name=name, action="doc", target=others[0]))
-        result_maps.append(dict(name="a"+name, action="doc", target=f))
+        result_maps.append(dict(name=name.lower(), action="doc", target=others[0]))
+        if os.stat(f).st_size>0:
+            result_maps.append(dict(name="a"+name.lower(), action="doc", target=f))
     else:
-        result_maps.append(dict(name=name, action="doc", target=f))
+        #if len(others)>1:
+        #    print("AMBIGUOUS %r" % others)
+        result_maps.append(dict(name=name.lower(), action="doc", target=f))
     return result_maps
 
 
@@ -1008,7 +1012,7 @@ def scan_trim_result_maps(result_maps):
         new_cap.update(m)
         old_target = old_cap.get('target')
         new_target = new_cap['target']
-        if old_target is not None and old_target!=new_target and os.path.exists(old_target):
+        if not scan_force_update and old_target is not None and old_target!=new_target and os.path.exists(old_target):
             print("### WARNING:  Ignoring update to %r since target %r still exists.  new target = %s" %
                   (old_cap['name'], old_cap['target'], new_cap['target']))
         elif new_cap != old_cap:
@@ -1066,7 +1070,7 @@ def is_hook_file(f):
     return parts[0].startswith("__") and parts[0].endswith("__") and parts[1]==".md"
 
 def file_stripped_base(f):
-    base = os.path.basename(f).lower()
+    base = os.path.basename(f)
     parts = os.path.splitext(base)
     stripped = parts[0].strip("_")
     return stripped
@@ -1075,7 +1079,7 @@ def file_stripped_base(f):
 # --- run once to cleanup old file formats ---
 
 def run_once_manual_moves():
-    for root in ['/ob', '/Users/oblinger/GoogleDrive', '/Volumes/GoogleDrive/My Drive']:
+    for root in ['/Users/oblinger/ob', '/Users/oblinger/GoogleDrive', '/Volumes/GoogleDrive/My Drive']:
         for f in recursive_file_gen(root):
             new_hook = get_new_hook_for_org_md(f)
             if not new_hook or os.path.exists(new_hook):
